@@ -1,67 +1,113 @@
+import { Server, Socket } from 'socket.io';
 import {
-  ConnectedSocket,
-  MessageBody,
   OnGatewayConnection,
   OnGatewayDisconnect,
-  OnGatewayInit,
   SubscribeMessage,
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
-import { Namespace, Socket } from 'socket.io';
-import { Logger } from '@nestjs/common';
+import { RoomService } from './events.service';
+import { setInitDto } from './dto/events.dto';
+import { createRequestDto } from './dto/events.dto.request.create.room';
 
-@WebSocketGateway({
-  namespace: 'game',
-  // cors: {
-  //   origin: ['http://localhost:8080'],
-  // },
-})
-export class EventsGateway
-  implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
-{
-  private logger = new Logger('Gateway');
+@WebSocketGateway(5000)
+export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
+  constructor(private readonly roomService: RoomService) {}
+  @WebSocketServer()
+  server: Server;
 
-  @WebSocketServer() nsp: Namespace;
-
-  afterInit() {
-    this.nsp.adapter.on('create-room', (room) => {
-      this.logger.log(`"Room:${room}"이 생성되었습니다.`);
-    });
-
-    this.nsp.adapter.on('join-room', (room, id) => {
-      this.logger.log(`"Socket:${id}"이 "Room:${room}"에 참가`);
-    });
-
-    this.nsp.adapter.on('leave-room', (room, id) => {
-      this.logger.log(`"Socket:${id}"이 "Room:${room}"에서 나감`);
-    });
-
-    this.nsp.adapter.on('delete-room', (roomName) => {
-      this.logger.log(`"Room:${roomName}" 삭제`);
-    });
-
-    this.logger.log('웹 소켓 서버 초기화');
+  handleConnection(client: Socket): void {
+    console.log('connected', client.id);
+    client.leave(client.id);
+    client.data.gameId = `room:lobby`;
+    client.join('room:lobby');
   }
 
-  handleConnection(@ConnectedSocket() socket: Socket) {
-    this.logger.log(`${socket.id} 소켓 연결`);
+  handleDisconnect(client: Socket): void {
+    const { gameId } = client.data;
 
-    socket.broadcast.emit('message', {
-      message: `${socket.id} 입장`,
+    if (
+      gameId != 'room:lobby' &&
+      !this.server.sockets.adapter.rooms.get(gameId)
+    ) {
+      this.roomService.deleteGameRoom(gameId);
+      this.server.emit('getGameRoomList', this.roomService.getGameRoomList);
+    }
+    console.log('disconnected', client.id);
+  }
+
+  @SubscribeMessage('sendMessage')
+  sendMessage(client: Socket, message: string): void {
+    const { gameId } = client.data;
+    client.to(gameId).emit('getMessage', {
+      id: client.id,
+      nickname: client.data.nickname,
+      message,
     });
   }
 
-  handleDisconnect(@ConnectedSocket() socket: Socket) {
-    this.logger.log(`${socket.id} 소켓 연결 해제 `);
+  @SubscribeMessage('setInit')
+  setInit(client: Socket, data: setInitDto): setInitDto {
+    if (client.data.isInit) {
+      return;
+    }
+
+    client.data.nickname = data.nickname
+      ? data.nickname
+      : '낯선사람' + client.id;
+
+    client.data.isInit = true;
+
+    return {
+      nickname: client.data.nickname,
+      room: {
+        gameId: 'room:lobby',
+        gameName: 'lobby',
+      },
+    };
   }
 
-  @SubscribeMessage('message')
-  handleMessage(
-    @ConnectedSocket() socket: Socket,
-    @MessageBody() message: string,
-  ) {
-    socket.broadcast.emit('message', { username: socket.id, message });
-    return { username: socket.id, message };
+  @SubscribeMessage('getGameRoomList')
+  getGameRoomList(client: Socket, payload: any) {
+    client.emit('getGameRoomList', this.roomService.getGameRoomList());
+  }
+
+  @SubscribeMessage('createGameRoom')
+  createGameRoom(client: Socket, requestDto: createRequestDto) {
+    console.log(client.data.nickname + 'trying to make a room');
+    if (
+      client.data.gameId != 'room: lobby' &&
+      this.server.sockets.adapter.rooms.get(client.data.gameId).size == 1
+    ) {
+      this.roomService.deleteGameRoom(client.data.gameId);
+    }
+
+    this.roomService.createGameRoom(client, requestDto);
+
+    return {
+      gameId: client.data.gameId,
+      gameName: this.roomService.getGameRoom(client.data.gameId).game_name,
+    };
+  }
+
+  @SubscribeMessage('enterGameRoom')
+  enterGameRoom(client: Socket, gameId: string) {
+    if (client.rooms.has(gameId)) {
+      return;
+    }
+
+    if (
+      client.data.gameId != 'room:lobby' &&
+      this.server.sockets.adapter.rooms.get(client.data.gameId).size == 1
+    ) {
+      this.roomService.deleteGameRoom(client.data.gameId);
+    }
+
+    this.roomService.enterGameRoom(client, gameId);
+
+    return {
+      gameId: gameId,
+      gameName: this.roomService.getGameRoom(gameId).game_name,
+    };
   }
 }
