@@ -9,6 +9,9 @@ import {
 import { RoomService } from './events.service';
 import { setInitDto } from './dto/events.dto';
 import { createRequestDto } from './dto/events.dto.request.create.room';
+import * as jwt from 'jsonwebtoken';
+import * as dotenv from 'dotenv';
+dotenv.config();
 
 @WebSocketGateway(5000)
 export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -20,6 +23,18 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     console.log('connected', client.id);
     client.leave(client.id);
     client.data.gameId = `room:lobby`;
+
+    console.log(process.env.JWT_SECRET);
+
+    const decodedJwt = jwt.verify(
+      client.handshake.headers.authorization,
+      process.env.JWT_SECRET,
+    );
+
+    client.data.nickname = decodedJwt.nickname;
+
+    console.log(client.data.nickname);
+
     client.join('room:lobby');
   }
 
