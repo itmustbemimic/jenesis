@@ -22,7 +22,7 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   handleConnection(client: Socket): void {
     try {
       const decodedJwt = jwt.verify(
-        client.handshake.headers.authorization,
+        client.handshake.headers.authorization.substring('Bearer '.length),
         process.env.JWT_SECRET,
       );
       client.data.nickname = decodedJwt.nickname;
@@ -114,4 +114,6 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     return this.roomService.exitGameRoom(client, gameId);
   }
+
+  // TODO 어드민 게임종료 버튼 만들기
 }

@@ -29,7 +29,6 @@ export class RoomService {
 
   createGameRoom(client: Socket, request: createRequestDto): void {
     const gameId = `room:${uuidv4()}`;
-    const nickname: string = client.data.nickname;
 
     console.log(request.table_no);
 
