@@ -7,7 +7,6 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { RoomService } from './events.service';
-import { setInitDto } from './dto/events.dto';
 import { createRequestDto } from './dto/events.dto.request.create.room';
 import * as jwt from 'jsonwebtoken';
 import * as dotenv from 'dotenv';
@@ -46,12 +45,13 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
       gameId != 'room:lobby' &&
       !this.server.sockets.adapter.rooms.get(gameId)
     ) {
-      this.roomService.deleteGameRoom(gameId);
+      //this.roomService.deleteGameRoom(gameId);
       this.server.emit('getGameRoomList', this.roomService.getGameRoomList);
     }
     console.log('disconnected', client.id);
   }
 
+  // TODO 타이머
   @SubscribeMessage('sendMessage')
   sendMessage(client: Socket, message: string): void {
     const { gameId } = client.data;
@@ -78,6 +78,7 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     this.roomService.createGameRoom(client, requestDto);
+    client.emit('getGameRoomList', this.roomService.getGameRoomList());
 
     return {
       gameId: client.data.gameId,

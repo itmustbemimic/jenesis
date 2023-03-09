@@ -102,4 +102,6 @@ export class RoomService {
   deleteGameRoom(gameId: string) {
     delete this.roomList[gameId];
   }
+
+  // TODO 게임종료하고 DB 연동하기
 }
