@@ -20,19 +20,20 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   server: Server;
 
   handleConnection(client: Socket): void {
+    try {
+      const decodedJwt = jwt.verify(
+        client.handshake.headers.authorization,
+        process.env.JWT_SECRET,
+      );
+      client.data.nickname = decodedJwt.nickname;
+    } catch (e) {
+      client.emit('getMessage', e);
+      client.disconnect();
+    }
+
     console.log('connected', client.id);
     client.leave(client.id);
     client.data.gameId = `room:lobby`;
-
-    console.log(process.env.JWT_SECRET);
-
-    const decodedJwt = jwt.verify(
-      client.handshake.headers.authorization,
-      process.env.JWT_SECRET,
-    );
-
-    client.data.nickname = decodedJwt.nickname;
-
     console.log(client.data.nickname);
 
     client.join('room:lobby');
@@ -61,27 +62,6 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     });
   }
 
-  @SubscribeMessage('setInit')
-  setInit(client: Socket, data: setInitDto): setInitDto {
-    if (client.data.isInit) {
-      return;
-    }
-
-    client.data.nickname = data.nickname
-      ? data.nickname
-      : '낯선사람' + client.id;
-
-    client.data.isInit = true;
-
-    return {
-      nickname: client.data.nickname,
-      room: {
-        gameId: 'room:lobby',
-        gameName: 'lobby',
-      },
-    };
-  }
-
   @SubscribeMessage('getGameRoomList')
   getGameRoomList(client: Socket, payload: any) {
     client.emit('getGameRoomList', this.roomService.getGameRoomList());
@@ -107,6 +87,8 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage('enterGameRoom')
   enterGameRoom(client: Socket, gameId: string) {
+    console.log(client.data.nickname + ' trying to enter ' + gameId);
+
     if (client.rooms.has(gameId)) {
       return;
     }
@@ -124,5 +106,12 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
       gameId: gameId,
       gameName: this.roomService.getGameRoom(gameId).game_name,
     };
+  }
+
+  @SubscribeMessage('exitGameRoom')
+  exitGameRoom(client: Socket) {
+    const { nickname, gameId } = client.data;
+
+    return this.roomService.exitGameRoom(client, gameId);
   }
 }

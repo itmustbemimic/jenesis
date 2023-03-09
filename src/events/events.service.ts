@@ -55,12 +55,15 @@ export class RoomService {
   }
 
   enterGameRoom(client: Socket, gameId: string) {
+    console.log('get inside');
     client.data.gameId = gameId;
     client.rooms.clear();
     client.join(gameId);
 
     const { nickname } = client.data;
     const { game_name } = this.getGameRoom(gameId);
+
+    this.getGameRoom(gameId).playing_users.push(nickname);
     client.to(gameId).emit('getMessage', {
       id: null,
       nickname: '안내',
@@ -74,6 +77,14 @@ export class RoomService {
     client.join(`room:lobby`);
 
     const { nickname } = client.data;
+    const playing_users = this.getGameRoom(gameId).playing_users;
+
+    for (const i in playing_users) {
+      if (playing_users[i] === nickname) playing_users.splice(Number(i), 1);
+      console.log(i);
+    }
+
+    this.getGameRoom(gameId).sitout_users.push(nickname);
     client.to(gameId).emit('getMessage', {
       id: null,
       nickname: '안내',
