@@ -10,6 +10,7 @@ import { RoomService } from './events.service';
 import { createRequestDto } from './dto/events.dto.request.create.room';
 import * as jwt from 'jsonwebtoken';
 import * as dotenv from 'dotenv';
+import * as timers from 'timers';
 dotenv.config();
 
 @WebSocketGateway(5000)
@@ -116,5 +117,14 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     return this.roomService.exitGameRoom(client, gameId);
   }
 
+  @SubscribeMessage('sitout')
+  sitoutGame(client: Socket, userNickname: string) {
+    const { gameId } = client.data;
+
+    return this.roomService.sitoutGame(client, gameId, userNickname);
+  }
+
   // TODO 어드민 게임종료 버튼 만들기
+
+  // TODO 타이머, 등수 설정 게임 종료, 싯아웃 로직 수정
 }

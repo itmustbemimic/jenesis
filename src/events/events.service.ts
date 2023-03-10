@@ -91,6 +91,14 @@ export class RoomService {
     });
   }
 
+  sitoutGame(client: Socket, gameId: string, userNickname: string) {
+    const playingUsers = this.getGameRoom(gameId).playing_users;
+
+    for (const i in playingUsers) {
+      if (playingUsers[i] === userNickname) playingUsers.splice(Number(i), 1);
+    }
+  }
+
   getGameRoom(gameId: string): roomListDto {
     return this.roomList[gameId];
   }
