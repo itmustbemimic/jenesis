@@ -1,4 +1,3 @@
-import { Socket } from 'socket.io';
 export class roomListDto {
   table_no: number;
   game_id: string;
@@ -14,10 +13,20 @@ export class roomListDto {
   status: string;
 }
 
-export class setInitDto {
-  nickname: string;
-  room: {
-    gameId: string;
-    gameName: string;
-  };
+export class createRequestDto {
+  table_no: number;
+  game_name: string;
+  entry: number;
+  ticket_amount: number;
+  ticket_type: string;
+  blind: string;
+  ante: number;
+}
+
+export class finishGameDto {
+  user_1st: string;
+  user_2nd: string;
+  user_3rd: string;
+  prize_type: string;
+  prize_amount: number;
 }

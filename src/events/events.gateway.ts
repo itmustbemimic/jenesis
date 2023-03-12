@@ -7,7 +7,7 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { RoomService } from './events.service';
-import { createRequestDto } from './dto/events.dto.request.create.room';
+import { createRequestDto, finishGameDto } from './dto/events.dto';
 import * as jwt from 'jsonwebtoken';
 import * as dotenv from 'dotenv';
 import * as timers from 'timers';
@@ -121,12 +121,24 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage('sitout')
   sitoutGame(client: Socket, userNickname: string) {
+    if (!client.data.roles.includes('ROLE_ADMIN')) {
+      client.emit('getMessage', '관리자만 싯아웃 가능');
+      return;
+    }
+
     const { gameId } = client.data;
 
     return this.roomService.sitoutGame(client, gameId, userNickname);
   }
 
-  // TODO 어드민 게임종료 버튼 만들기
+  @SubscribeMessage('finishGame')
+  finishGame(client: Socket, finishGameDto: finishGameDto) {
+    if (!client.data.roles.includes('ROLE_ADMIN')) {
+      client.emit('getMessage', '관리자만 게임 종료 가능');
+      return;
+    }
+    return this.roomService.finishGame(client, finishGameDto);
+  }
 
-  // TODO 타이머, 등수 설정 게임 종료, 싯아웃 로직 수정
+  // TODO 타이머, 승점 가산점
 }

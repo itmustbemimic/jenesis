@@ -1,8 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { roomListDto } from './dto/events.dto';
-import { createRequestDto } from './dto/events.dto.request.create.room';
+import { finishGameDto, roomListDto } from './dto/events.dto';
+import { createRequestDto } from './dto/events.dto';
 import { Socket } from 'socket.io';
 import { v4 as uuidv4 } from 'uuid';
+
+import { ddbClient } from '../config/ddb/ddbClient';
+import { PutCommand } from '@aws-sdk/lib-dynamodb';
 
 @Injectable()
 export class RoomService {
@@ -60,8 +63,18 @@ export class RoomService {
 
     const { nickname } = client.data;
     const { game_name } = this.getGameRoom(gameId);
+    const playingUsers = this.getGameRoom(gameId).playing_users;
+    const sitOutUsers = this.getGameRoom(gameId).sitout_users;
 
-    this.getGameRoom(gameId).playing_users.push(nickname);
+    if (!playingUsers.includes(nickname)) {
+      for (const i in sitOutUsers) {
+        if (sitOutUsers[i] === nickname) {
+          sitOutUsers.splice(Number(i), 1);
+        }
+      }
+      playingUsers.push(nickname);
+    }
+
     client.to(gameId).emit('getMessage', {
       id: null,
       nickname: '안내',
@@ -73,8 +86,85 @@ export class RoomService {
     const playingUsers = this.getGameRoom(gameId).playing_users;
 
     for (const i in playingUsers) {
-      if (playingUsers[i] === userNickname) playingUsers.splice(Number(i), 1);
+      if (playingUsers[i] === userNickname) {
+        playingUsers.splice(Number(i), 1);
+        this.getGameRoom(gameId).sitout_users.push(userNickname);
+        return;
+      }
     }
+    client.emit(
+      'getMessage',
+      userNickname + '님은 플레이 중인 유저가 아닙니다.',
+    );
+  }
+
+  finishGame(client: Socket, finishGameDto: finishGameDto) {
+    const game = {
+      TableName: process.env.GAME_TABLE_NAME,
+      Item: {
+        game_id: client.data.gameId,
+        date: new Date().toISOString(),
+        user_1st: finishGameDto.user_1st,
+        user_2nd: finishGameDto.user_2nd,
+        user_3rd: finishGameDto.user_3rd,
+        prize_type: finishGameDto.prize_type,
+        prize_amount: finishGameDto.prize_amount,
+        user_list: this.getGameRoom(client.data.gameId).playing_users.concat(
+          this.getGameRoom(client.data.gameId).sitout_users,
+        ),
+      },
+    };
+    const user1 = {
+      TableName: process.env.USER_TABLE_NAME,
+      Item: {
+        user_id: finishGameDto.user_1st,
+        game_id: client.data.gameId,
+        point: 3,
+        date: new Date().toISOString(),
+        prize_type: finishGameDto.prize_type,
+        prize_amount: finishGameDto.prize_amount,
+      },
+    };
+    const user2 = {
+      TableName: process.env.USER_TABLE_NAME,
+      Item: {
+        user_id: finishGameDto.user_2nd,
+        game_id: client.data.gameId,
+        point: 2,
+        date: new Date().toISOString(),
+        prize_type: finishGameDto.prize_type,
+        prize_amount: 0,
+      },
+    };
+    const user3 = {
+      TableName: process.env.USER_TABLE_NAME,
+      Item: {
+        user_id: finishGameDto.user_3rd,
+        game_id: client.data.gameId,
+        point: 1,
+        date: new Date().toISOString(),
+        prize_type: finishGameDto.prize_type,
+        prize_amount: 0,
+      },
+    };
+
+    try {
+      const data = ddbClient.send(new PutCommand(game));
+      console.log('game data add success ', data);
+      const data1 = ddbClient.send(new PutCommand(user1));
+      console.log('user data add success ', data1);
+      const data2 = ddbClient.send(new PutCommand(user2));
+      console.log('user data add success ', data2);
+      const data3 = ddbClient.send(new PutCommand(user3));
+      console.log('user data add success ', data3);
+    } catch (e) {
+      client.emit('getMessage', 'insert item error. check the logs: ' + e);
+      return;
+    }
+
+    //TODO 랭킹용 db 추가 하기
+
+    this.deleteGameRoom(client.data.gameId);
   }
 
   getGameRoom(gameId: string): roomListDto {
@@ -88,6 +178,4 @@ export class RoomService {
   deleteGameRoom(gameId: string) {
     delete this.roomList[gameId];
   }
-
-  // TODO 게임종료하고 DB 연동하기
 }
