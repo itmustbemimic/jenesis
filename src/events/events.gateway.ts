@@ -26,16 +26,21 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
         process.env.JWT_SECRET,
       );
       client.data.nickname = decodedJwt.nickname;
+      client.data.roles = decodedJwt.roles;
     } catch (e) {
       client.emit('getMessage', e);
       client.disconnect();
+      return;
     }
 
-    console.log('connected', client.id);
+    if (!client.data.roles.includes('ROLE_PERMITTED')) {
+      client.emit('getMessage', '가입 승인 되지 않은 유저');
+      client.disconnect();
+      return;
+    }
+
     client.leave(client.id);
     client.data.gameId = `room:lobby`;
-    console.log(client.data.nickname);
-
     client.join('room:lobby');
   }
 
@@ -70,7 +75,11 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage('createGameRoom')
   createGameRoom(client: Socket, requestDto: createRequestDto) {
-    console.log(client.data.nickname + 'trying to make a room');
+    if (!client.data.roles.includes('ROLE_ADMIN')) {
+      client.emit('getMessage', '관리자만 게임 생성 가능');
+      return;
+    }
+
     if (
       client.data.gameId != 'room: lobby' &&
       this.server.sockets.adapter.rooms.get(client.data.gameId).size == 1
@@ -108,13 +117,6 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
       gameId: gameId,
       gameName: this.roomService.getGameRoom(gameId).game_name,
     };
-  }
-
-  @SubscribeMessage('exitGameRoom')
-  exitGameRoom(client: Socket) {
-    const { nickname, gameId } = client.data;
-
-    return this.roomService.exitGameRoom(client, gameId);
   }
 
   @SubscribeMessage('sitout')

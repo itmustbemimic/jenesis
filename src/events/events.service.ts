@@ -35,7 +35,7 @@ export class RoomService {
     this.roomList[gameId] = {
       table_no: request.table_no,
       game_id: gameId,
-      dealer_id: request.dealer_id,
+      dealer_id: client.data.nickname,
       game_name: request.game_name,
       entry: request.entry,
       ticket_amount: request.ticket_amount,
@@ -54,7 +54,6 @@ export class RoomService {
   }
 
   enterGameRoom(client: Socket, gameId: string) {
-    console.log('get inside');
     client.data.gameId = gameId;
     client.rooms.clear();
     client.join(gameId);
@@ -67,27 +66,6 @@ export class RoomService {
       id: null,
       nickname: '안내',
       message: `"${nickname}"님이 "${game_name}"방에 접속하셨습니다.`,
-    });
-  }
-
-  exitGameRoom(client: Socket, gameId: string) {
-    client.data.gameId = `room:lobby`;
-    client.rooms.clear();
-    client.join(`room:lobby`);
-
-    const { nickname } = client.data;
-    const playing_users = this.getGameRoom(gameId).playing_users;
-
-    for (const i in playing_users) {
-      if (playing_users[i] === nickname) playing_users.splice(Number(i), 1);
-      console.log(i);
-    }
-
-    this.getGameRoom(gameId).sitout_users.push(nickname);
-    client.to(gameId).emit('getMessage', {
-      id: null,
-      nickname: '안내',
-      message: '"' + nickname + '"님이 방에서 나갔습니다.',
     });
   }
 
