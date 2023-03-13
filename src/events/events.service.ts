@@ -62,33 +62,27 @@ export class RoomService {
     client.join(gameId);
 
     const { nickname } = client.data;
-    const { game_name } = this.getGameRoom(gameId);
-    const playingUsers = this.getGameRoom(gameId).playing_users;
-    const sitOutUsers = this.getGameRoom(gameId).sitout_users;
+    const { playing_users, sitout_users } = this.getGameRoom(gameId);
 
-    if (!playingUsers.includes(nickname)) {
-      for (const i in sitOutUsers) {
-        if (sitOutUsers[i] === nickname) {
-          sitOutUsers.splice(Number(i), 1);
+    if (!playing_users.includes(nickname)) {
+      for (const i in sitout_users) {
+        if (sitout_users[i] === nickname) {
+          sitout_users.splice(Number(i), 1);
         }
       }
-      playingUsers.push(nickname);
+      playing_users.push(nickname);
+      client.to(gameId).emit('getMessage', nickname + ' 게임 참가');
     }
-
-    client.to(gameId).emit('getMessage', {
-      id: null,
-      nickname: '안내',
-      message: `"${nickname}"님이 "${game_name}"방에 접속하셨습니다.`,
-    });
   }
 
   sitoutGame(client: Socket, gameId: string, userNickname: string) {
-    const playingUsers = this.getGameRoom(gameId).playing_users;
+    const { playing_users, sitout_users } = this.getGameRoom(gameId);
 
-    for (const i in playingUsers) {
-      if (playingUsers[i] === userNickname) {
-        playingUsers.splice(Number(i), 1);
-        this.getGameRoom(gameId).sitout_users.push(userNickname);
+    for (const i in playing_users) {
+      if (playing_users[i] === userNickname) {
+        playing_users.splice(Number(i), 1);
+        sitout_users.push(userNickname);
+        client.to(gameId).emit('getMessage', userNickname + ' sitout');
         return;
       }
     }
@@ -158,13 +152,17 @@ export class RoomService {
       const data3 = ddbClient.send(new PutCommand(user3));
       console.log('user data add success ', data3);
     } catch (e) {
-      client.emit('getMessage', 'insert item error. check the logs: ' + e);
+      client.emit(
+        'getMessage',
+        'insert item error. try again and check the logs: ' + e,
+      );
       return;
     }
 
     //TODO 랭킹용 db 추가 하기
 
     this.deleteGameRoom(client.data.gameId);
+    client.emit('getMessage', '게임 기록 성공!');
   }
 
   getGameRoom(gameId: string): roomListDto {
