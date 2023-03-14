@@ -7,7 +7,7 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { RoomService } from './events.service';
-import { createRequestDto, finishGameDto } from './dto/events.dto';
+import { createRoomRequestDto, finishGameDto } from './dto/events.dto';
 import * as jwt from 'jsonwebtoken';
 import * as dotenv from 'dotenv';
 import * as timers from 'timers';
@@ -75,7 +75,7 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('createGameRoom')
-  createGameRoom(client: Socket, requestDto: createRequestDto) {
+  createGameRoom(client: Socket, requestDto: createRoomRequestDto) {
     if (!client.data.roles.includes('ROLE_ADMIN')) {
       client.emit('getMessage', '관리자만 게임 생성 가능');
       return;

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { finishGameDto, roomListDto } from './dto/events.dto';
-import { createRequestDto } from './dto/events.dto';
+import { createRoomRequestDto } from './dto/events.dto';
 import { Socket } from 'socket.io';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -18,6 +18,7 @@ export class RoomService {
         game_id: 'room:lobby',
         dealer_id: null,
         game_name: 'lobby',
+        entry_limit: null,
         entry: null,
         ticket_amount: null,
         ticket_type: null,
@@ -30,7 +31,7 @@ export class RoomService {
     };
   }
 
-  createGameRoom(client: Socket, request: createRequestDto): void {
+  createGameRoom(client: Socket, request: createRoomRequestDto): void {
     const gameId = `room:${uuidv4()}`;
 
     for (const i in this.roomList) {
@@ -46,7 +47,8 @@ export class RoomService {
       game_id: gameId,
       dealer_id: client.data.nickname,
       game_name: request.game_name,
-      entry: request.entry,
+      entry_limit: request.entry_limit,
+      entry: 0,
       ticket_amount: request.ticket_amount,
       ticket_type: request.ticket_type,
       blind: request.blind,
@@ -63,20 +65,30 @@ export class RoomService {
   }
 
   enterGameRoom(client: Socket, gameId: string) {
+    const { nickname } = client.data;
+    const { playing_users, sitout_users, dealer_id, entry, entry_limit } =
+      this.getGameRoom(gameId);
+
+    if (entry_limit <= entry) {
+      client.emit('error', '엔트리 꽉참');
+      return;
+    }
+
     client.data.gameId = gameId;
     client.rooms.clear();
     client.join(gameId);
 
-    const { nickname } = client.data;
-    const { playing_users, sitout_users } = this.getGameRoom(gameId);
-
-    if (!playing_users.includes(nickname)) {
+    if (
+      !playing_users.includes(nickname) &&
+      dealer_id !== client.data.nickname
+    ) {
       // for (const i in sitout_users) {
       //   if (sitout_users[i] === nickname) {
       //     sitout_users.splice(Number(i), 1);
       //   }
       // }
       playing_users.push(nickname);
+      this.getGameRoom(gameId).entry++;
       client.to(gameId).emit('getMessage', nickname + ' 게임 참가');
     }
   }

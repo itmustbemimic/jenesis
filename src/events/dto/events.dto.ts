@@ -3,6 +3,7 @@ export class roomListDto {
   game_id: string;
   dealer_id: string;
   game_name: string;
+  entry_limit: number;
   entry: number;
   ticket_amount: number;
   ticket_type: string;
@@ -13,10 +14,10 @@ export class roomListDto {
   status: string;
 }
 
-export class createRequestDto {
+export class createRoomRequestDto {
   table_no: number;
   game_name: string;
-  entry: number;
+  entry_limit: number;
   ticket_amount: number;
   ticket_type: string;
   blind: string;
