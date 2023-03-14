@@ -33,7 +33,7 @@ export class RoomService {
   createGameRoom(client: Socket, request: createRequestDto): void {
     const gameId = `room:${uuidv4()}`;
 
-    console.log(request.table_no);
+    // TODO 테이블 번호 중복 안되게
 
     this.roomList[gameId] = {
       table_no: request.table_no,
@@ -47,7 +47,7 @@ export class RoomService {
       ante: request.ante,
       playing_users: [],
       sitout_users: [],
-      status: 'playing',
+      status: request.status,
     };
 
     client.data.gameId = gameId;
@@ -142,6 +142,9 @@ export class RoomService {
       },
     };
 
+    // for test
+    this.deleteGameRoom(client.data.gameId);
+
     try {
       const data = ddbClient.send(new PutCommand(game));
       console.log('game data add success ', data);
@@ -156,12 +159,12 @@ export class RoomService {
         'getMessage',
         'insert item error. try again and check the logs: ' + e,
       );
+      console.log('db error' + e);
       return;
     }
 
-    //TODO 랭킹용 db 추가 하기
-
-    this.deleteGameRoom(client.data.gameId);
+    // for publish
+    // this.deleteGameRoom(client.data.gameId);
     client.emit('getMessage', '게임 기록 성공!');
   }
 

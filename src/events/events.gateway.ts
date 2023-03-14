@@ -27,6 +27,7 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
       );
       client.data.nickname = decodedJwt.nickname;
       client.data.roles = decodedJwt.roles;
+      client.data.uuid = decodedJwt.uuid;
     } catch (e) {
       client.emit('getMessage', e);
       client.disconnect();
@@ -80,12 +81,12 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
       return;
     }
 
-    if (
-      client.data.gameId != 'room: lobby' &&
-      this.server.sockets.adapter.rooms.get(client.data.gameId).size == 1
-    ) {
-      this.roomService.deleteGameRoom(client.data.gameId);
-    }
+    // if (
+    //   client.data.gameId != 'room: lobby' &&
+    //   this.server.sockets.adapter.rooms.get(client.data.gameId).size == 1
+    // ) {
+    //   this.roomService.deleteGameRoom(client.data.gameId);
+    // }
 
     this.roomService.createGameRoom(client, requestDto);
     client.emit('getGameRoomList', this.roomService.getGameRoomList());
@@ -104,12 +105,12 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
       return;
     }
 
-    if (
-      client.data.gameId != 'room:lobby' &&
-      this.server.sockets.adapter.rooms.get(client.data.gameId).size == 1
-    ) {
-      this.roomService.deleteGameRoom(client.data.gameId);
-    }
+    // if (
+    //   client.data.gameId != 'room:lobby' &&
+    //   this.server.sockets.adapter.rooms.get(client.data.gameId).size == 1
+    // ) {
+    //   this.roomService.deleteGameRoom(client.data.gameId);
+    // }
 
     this.roomService.enterGameRoom(client, gameId);
 
@@ -141,4 +142,8 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   // TODO 타이머, 승점 가산점
+  // TODO 자리 만들기
+  // TODO 게임 기록 관련 닉네임에서 uuid로 바꾸기
+  // TODO 엔트리 채워지는거 만들기
+  // TODO re buy in  했을때 싯아웃 리스트에 내 이름 유지
 }

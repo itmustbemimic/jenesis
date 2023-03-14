@@ -21,6 +21,7 @@ export class createRequestDto {
   ticket_type: string;
   blind: string;
   ante: number;
+  status: string;
 }
 
 export class finishGameDto {
