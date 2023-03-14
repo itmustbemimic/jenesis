@@ -33,7 +33,13 @@ export class RoomService {
   createGameRoom(client: Socket, request: createRequestDto): void {
     const gameId = `room:${uuidv4()}`;
 
-    // TODO 테이블 번호 중복 안되게
+    for (const i in this.roomList) {
+      if (this.roomList[i].table_no === request.table_no) {
+        client.emit('error', '테이블이 이미 사용중입니다.');
+        client.emit('getMessage', this.roomList);
+        return;
+      }
+    }
 
     this.roomList[gameId] = {
       table_no: request.table_no,
