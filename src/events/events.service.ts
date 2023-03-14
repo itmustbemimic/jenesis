@@ -65,11 +65,11 @@ export class RoomService {
     const { playing_users, sitout_users } = this.getGameRoom(gameId);
 
     if (!playing_users.includes(nickname)) {
-      for (const i in sitout_users) {
-        if (sitout_users[i] === nickname) {
-          sitout_users.splice(Number(i), 1);
-        }
-      }
+      // for (const i in sitout_users) {
+      //   if (sitout_users[i] === nickname) {
+      //     sitout_users.splice(Number(i), 1);
+      //   }
+      // }
       playing_users.push(nickname);
       client.to(gameId).emit('getMessage', nickname + ' 게임 참가');
     }
@@ -81,7 +81,9 @@ export class RoomService {
     for (const i in playing_users) {
       if (playing_users[i] === userNickname) {
         playing_users.splice(Number(i), 1);
-        sitout_users.push(userNickname);
+        if (!sitout_users.includes(userNickname)) {
+          sitout_users.push(userNickname);
+        }
         client.to(gameId).emit('getMessage', userNickname + ' sitout');
         return;
       }
