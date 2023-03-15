@@ -144,5 +144,4 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   // TODO 타이머, 승점 가산점
   // TODO 자리 만들기
   // TODO 게임 기록 관련 닉네임에서 uuid로 바꾸기
-  // TODO 엔트리 채워지는거 만들기
 }

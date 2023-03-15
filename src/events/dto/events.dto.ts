@@ -9,8 +9,8 @@ export class roomListDto {
   ticket_type: string;
   blind: string;
   ante: number;
-  playing_users: string[];
-  sitout_users: string[];
+  playing_users: Record<string, string>;
+  sitout_users: Record<string, string>;
   status: string;
 }
 

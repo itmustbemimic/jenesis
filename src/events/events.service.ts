@@ -53,8 +53,8 @@ export class RoomService {
       ticket_type: request.ticket_type,
       blind: request.blind,
       ante: request.ante,
-      playing_users: [],
-      sitout_users: [],
+      playing_users: {},
+      sitout_users: {},
       status: request.status,
     };
 
@@ -65,8 +65,8 @@ export class RoomService {
   }
 
   enterGameRoom(client: Socket, gameId: string) {
-    const { nickname } = client.data;
-    const { playing_users, sitout_users, dealer_id, entry, entry_limit } =
+    const { nickname, uuid } = client.data;
+    const { playing_users, dealer_id, entry, entry_limit } =
       this.getGameRoom(gameId);
 
     if (entry_limit <= entry) {
@@ -78,16 +78,8 @@ export class RoomService {
     client.rooms.clear();
     client.join(gameId);
 
-    if (
-      !playing_users.includes(nickname) &&
-      dealer_id !== client.data.nickname
-    ) {
-      // for (const i in sitout_users) {
-      //   if (sitout_users[i] === nickname) {
-      //     sitout_users.splice(Number(i), 1);
-      //   }
-      // }
-      playing_users.push(nickname);
+    if (!playing_users[nickname] && dealer_id !== client.data.nickname) {
+      playing_users[nickname] = uuid;
       this.getGameRoom(gameId).entry++;
       client.to(gameId).emit('getMessage', nickname + ' 게임 참가');
     }
@@ -96,20 +88,16 @@ export class RoomService {
   sitoutGame(client: Socket, gameId: string, userNickname: string) {
     const { playing_users, sitout_users } = this.getGameRoom(gameId);
 
-    for (const i in playing_users) {
-      if (playing_users[i] === userNickname) {
-        playing_users.splice(Number(i), 1);
-        if (!sitout_users.includes(userNickname)) {
-          sitout_users.push(userNickname);
-        }
-        client.to(gameId).emit('getMessage', userNickname + ' sitout');
-        return;
-      }
+    if (playing_users[userNickname] == null) {
+      client.emit(
+        'getMessage',
+        userNickname + '님은 플레이 중인 유저가 아닙니다.',
+      );
+    } else {
+      sitout_users[userNickname] = playing_users[userNickname];
+      delete playing_users[userNickname];
+      client.to(gameId).emit('getMessage', userNickname + 'sitout');
     }
-    client.emit(
-      'getMessage',
-      userNickname + '님은 플레이 중인 유저가 아닙니다.',
-    );
   }
 
   finishGame(client: Socket, finishGameDto: finishGameDto) {
@@ -123,9 +111,7 @@ export class RoomService {
         user_3rd: finishGameDto.user_3rd,
         prize_type: finishGameDto.prize_type,
         prize_amount: finishGameDto.prize_amount,
-        user_list: this.getGameRoom(client.data.gameId).playing_users.concat(
-          this.getGameRoom(client.data.gameId).sitout_users,
-        ),
+        user_list: this.getGameRoom(client.data.gameId).playing_users,
       },
     };
     const user1 = {
