@@ -101,11 +101,13 @@ export class RoomService {
   }
 
   finishGame(client: Socket, finishGameDto: finishGameDto) {
+    const now: string = new Date().toISOString();
+
     const game = {
       TableName: process.env.GAME_TABLE_NAME,
       Item: {
         game_id: client.data.gameId,
-        date: new Date().toISOString(),
+        date: now,
         user_1st: finishGameDto.user_1st,
         user_2nd: finishGameDto.user_2nd,
         user_3rd: finishGameDto.user_3rd,
@@ -120,7 +122,7 @@ export class RoomService {
         user_id: finishGameDto.user_1st,
         game_id: client.data.gameId,
         point: 3,
-        date: new Date().toISOString(),
+        date: now,
         prize_type: finishGameDto.prize_type,
         prize_amount: finishGameDto.prize_amount,
       },
@@ -131,7 +133,7 @@ export class RoomService {
         user_id: finishGameDto.user_2nd,
         game_id: client.data.gameId,
         point: 2,
-        date: new Date().toISOString(),
+        date: now,
         prize_type: finishGameDto.prize_type,
         prize_amount: 0,
       },
@@ -142,7 +144,7 @@ export class RoomService {
         user_id: finishGameDto.user_3rd,
         game_id: client.data.gameId,
         point: 1,
-        date: new Date().toISOString(),
+        date: now,
         prize_type: finishGameDto.prize_type,
         prize_amount: 0,
       },

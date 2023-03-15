@@ -52,7 +52,6 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
       gameId != 'room:lobby' &&
       !this.server.sockets.adapter.rooms.get(gameId)
     ) {
-      //this.roomService.deleteGameRoom(gameId);
       this.server.emit('getGameRoomList', this.roomService.getGameRoomList);
     }
     console.log('disconnected', client.id);
@@ -81,13 +80,6 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
       return;
     }
 
-    // if (
-    //   client.data.gameId != 'room: lobby' &&
-    //   this.server.sockets.adapter.rooms.get(client.data.gameId).size == 1
-    // ) {
-    //   this.roomService.deleteGameRoom(client.data.gameId);
-    // }
-
     this.roomService.createGameRoom(client, requestDto);
     client.emit('getGameRoomList', this.roomService.getGameRoomList());
 
@@ -104,13 +96,6 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     if (client.rooms.has(gameId)) {
       return;
     }
-
-    // if (
-    //   client.data.gameId != 'room:lobby' &&
-    //   this.server.sockets.adapter.rooms.get(client.data.gameId).size == 1
-    // ) {
-    //   this.roomService.deleteGameRoom(client.data.gameId);
-    // }
 
     this.roomService.enterGameRoom(client, gameId);
 
@@ -143,5 +128,4 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   // TODO 타이머, 승점 가산점
   // TODO 자리 만들기
-  // TODO 게임 기록 관련 닉네임에서 uuid로 바꾸기
 }
