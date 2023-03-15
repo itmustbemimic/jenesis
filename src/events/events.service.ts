@@ -22,6 +22,7 @@ export class RoomService {
         entry: null,
         ticket_amount: null,
         ticket_type: null,
+        duration: null,
         blind: null,
         ante: null,
         playing_users: null,
@@ -51,6 +52,7 @@ export class RoomService {
       entry: 0,
       ticket_amount: request.ticket_amount,
       ticket_type: request.ticket_type,
+      duration: request.duration,
       blind: request.blind,
       ante: request.ante,
       playing_users: {},
@@ -110,7 +112,10 @@ export class RoomService {
         user_3rd: finishGameDto.user_3rd,
         prize_type: finishGameDto.prize_type,
         prize_amount: finishGameDto.prize_amount,
-        user_list: this.getGameRoom(client.data.gameId).playing_users,
+        user_list: {
+          ...this.getGameRoom(client.data.gameId).playing_users,
+          ...this.getGameRoom(client.data.gameId).sitout_users,
+        },
       },
     };
     const user1 = {

@@ -7,6 +7,7 @@ export class roomListDto {
   entry: number;
   ticket_amount: number;
   ticket_type: string;
+  duration: number;
   blind: string;
   ante: number;
   playing_users: Record<string, string>;
@@ -20,6 +21,7 @@ export class createRoomRequestDto {
   entry_limit: number;
   ticket_amount: number;
   ticket_type: string;
+  duration: number;
   blind: string;
   ante: number;
   status: string;

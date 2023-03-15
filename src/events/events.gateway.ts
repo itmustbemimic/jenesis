@@ -10,7 +10,6 @@ import { RoomService } from './events.service';
 import { createRoomRequestDto, finishGameDto } from './dto/events.dto';
 import * as jwt from 'jsonwebtoken';
 import * as dotenv from 'dotenv';
-import * as timers from 'timers';
 dotenv.config();
 
 @WebSocketGateway(5000)
