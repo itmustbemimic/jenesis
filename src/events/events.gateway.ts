@@ -93,6 +93,11 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   enterGameRoom(client: Socket, gameId: string) {
     console.log(client.data.nickname + ' trying to enter ' + gameId);
 
+    if (!this.roomService.getGameRoom(gameId)) {
+      client.emit('error', '방 아이디 확인');
+      return;
+    }
+
     if (client.rooms.has(gameId)) {
       return;
     }

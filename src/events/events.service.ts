@@ -148,7 +148,7 @@ export class RoomService {
     };
 
     // for test
-    this.deleteGameRoom(client.data.gameId);
+    this.deleteGameRoom(client);
 
     try {
       const data = ddbClient.send(new PutCommand(game));
@@ -169,7 +169,7 @@ export class RoomService {
     }
 
     // for publish
-    // this.deleteGameRoom(client.data.gameId);
+    // this.deleteGameRoom(client);
     client.emit('getMessage', '게임 기록 성공!');
   }
 
@@ -181,7 +181,8 @@ export class RoomService {
     return this.roomList;
   }
 
-  deleteGameRoom(gameId: string) {
-    delete this.roomList[gameId];
+  deleteGameRoom(client: Socket) {
+    delete this.roomList[client.data.gameId];
+    client.emit('getRoomList', this.roomList);
   }
 }
