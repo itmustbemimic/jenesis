@@ -29,13 +29,13 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
       client.data.roles = decodedJwt.roles;
       client.data.uuid = decodedJwt.uuid;
     } catch (e) {
-      client.emit('getMessage', e);
+      client.emit('error', e);
       client.disconnect();
       return;
     }
 
     if (!client.data.roles.includes('ROLE_PERMITTED')) {
-      client.emit('getMessage', '가입 승인 되지 않은 유저');
+      client.emit('error', '가입 승인 되지 않은 유저');
       client.disconnect();
       return;
     }
@@ -76,7 +76,7 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('createGameRoom')
   createGameRoom(client: Socket, requestDto: createRoomRequestDto) {
     if (!client.data.roles.includes('ROLE_ADMIN')) {
-      client.emit('getMessage', '관리자만 게임 생성 가능');
+      client.emit('error', '관리자만 게임 생성 가능');
       return;
     }
 
@@ -108,7 +108,7 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('sitout')
   sitoutGame(client: Socket, userNickname: string) {
     if (!client.data.roles.includes('ROLE_ADMIN')) {
-      client.emit('getMessage', '관리자만 싯아웃 가능');
+      client.emit('error', '관리자만 싯아웃 가능');
       return;
     }
 
@@ -120,7 +120,7 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('finishGame')
   finishGame(client: Socket, finishGameDto: finishGameDto) {
     if (!client.data.roles.includes('ROLE_ADMIN')) {
-      client.emit('getMessage', '관리자만 게임 종료 가능');
+      client.emit('error', '관리자만 게임 종료 가능');
       return;
     }
     return this.roomService.finishGame(client, finishGameDto);

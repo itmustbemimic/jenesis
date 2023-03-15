@@ -88,11 +88,8 @@ export class RoomService {
   sitoutGame(client: Socket, gameId: string, userNickname: string) {
     const { playing_users, sitout_users } = this.getGameRoom(gameId);
 
-    if (playing_users[userNickname] == null) {
-      client.emit(
-        'getMessage',
-        userNickname + '님은 플레이 중인 유저가 아닙니다.',
-      );
+    if (!playing_users[userNickname]) {
+      client.emit('error', userNickname + '님은 플레이 중인 유저가 아닙니다.');
     } else {
       sitout_users[userNickname] = playing_users[userNickname];
       delete playing_users[userNickname];
@@ -164,7 +161,7 @@ export class RoomService {
       console.log('user data add success ', data3);
     } catch (e) {
       client.emit(
-        'getMessage',
+        'error',
         'insert item error. try again and check the logs: ' + e,
       );
       console.log('db error' + e);
