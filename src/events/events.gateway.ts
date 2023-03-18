@@ -75,12 +75,18 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('createGameRoom')
   createGameRoom(client: Socket, requestDto: createRoomRequestDto) {
     if (!client.data.roles.includes('ROLE_ADMIN')) {
-      client.emit('error', '관리자만 게임 생성 가능');
+      client.emit('error', {
+        type: 'createGameRoom',
+        msg: '관리자만 게임 생성 가능',
+      });
       return;
     }
 
     this.roomService.createGameRoom(client, requestDto);
-    client.emit('getGameRoomList', this.roomService.getGameRoomList());
+    client.broadcast.emit(
+      'getGameRoomList',
+      this.roomService.getGameRoomList(),
+    );
 
     return {
       gameId: client.data.gameId,
@@ -93,7 +99,7 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     console.log(client.data.nickname + ' trying to enter ' + gameId);
 
     if (!this.roomService.getGameRoom(gameId)) {
-      client.emit('error', '방 아이디 확인');
+      client.emit('error', { type: 'enterGameRoom', msg: '방 아이디 확인' });
       return;
     }
 
@@ -112,7 +118,7 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('sitout')
   sitoutGame(client: Socket, userNickname: string) {
     if (!client.data.roles.includes('ROLE_ADMIN')) {
-      client.emit('error', '관리자만 싯아웃 가능');
+      client.emit('error', { type: 'sitout', msg: '관리자만 싯아웃 가능' });
       return;
     }
 
@@ -124,7 +130,10 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('finishGame')
   finishGame(client: Socket, finishGameDto: finishGameDto) {
     if (!client.data.roles.includes('ROLE_ADMIN')) {
-      client.emit('error', '관리자만 게임 종료 가능');
+      client.emit('error', {
+        type: 'finishGame',
+        msg: '관리자만 게임 종료 가능',
+      });
       return;
     }
     return this.roomService.finishGame(client, finishGameDto);

@@ -12,24 +12,7 @@ export class RoomService {
   private roomList: Record<string, roomListDto>;
 
   constructor() {
-    this.roomList = {
-      'room:lobby': {
-        table_no: 0,
-        game_id: 'room:lobby',
-        dealer_id: null,
-        game_name: 'lobby',
-        entry_limit: null,
-        entry: null,
-        ticket_amount: null,
-        ticket_type: null,
-        duration: null,
-        blind: null,
-        ante: null,
-        playing_users: null,
-        sitout_users: null,
-        status: null,
-      },
-    };
+    this.roomList = {};
   }
 
   createGameRoom(client: Socket, request: createRoomRequestDto): void {
@@ -37,7 +20,10 @@ export class RoomService {
 
     for (const i in this.roomList) {
       if (this.roomList[i].table_no === request.table_no) {
-        client.emit('error', '테이블이 이미 사용중입니다.');
+        client.emit('error', {
+          type: 'createGameRoom',
+          msg: '테이블이 이미 사용중입니다.',
+        });
         client.emit('getMessage', this.roomList);
         return;
       }
@@ -72,7 +58,7 @@ export class RoomService {
       this.getGameRoom(gameId);
 
     if (entry_limit <= entry) {
-      client.emit('error', '엔트리 꽉참');
+      client.emit('error', { type: 'enterGameRoom', msg: '엔트리 꽉참' });
       return;
     }
 
@@ -91,7 +77,10 @@ export class RoomService {
     const { playing_users, sitout_users } = this.getGameRoom(gameId);
 
     if (!playing_users[userNickname]) {
-      client.emit('error', userNickname + '님은 플레이 중인 유저가 아닙니다.');
+      client.emit('error', {
+        type: 'sitout',
+        msg: userNickname + '님은 플레이 중인 유저가 아닙니다.',
+      });
     } else {
       sitout_users[userNickname] = playing_users[userNickname];
       delete playing_users[userNickname];
@@ -121,7 +110,7 @@ export class RoomService {
     const user1 = {
       TableName: process.env.USER_TABLE_NAME,
       Item: {
-        user_id: finishGameDto.user_1st,
+        user_uuid: finishGameDto.user_1st,
         game_id: client.data.gameId,
         point: 3,
         game_date: now,
@@ -132,7 +121,7 @@ export class RoomService {
     const user2 = {
       TableName: process.env.USER_TABLE_NAME,
       Item: {
-        user_id: finishGameDto.user_2nd,
+        user_uuid: finishGameDto.user_2nd,
         game_id: client.data.gameId,
         point: 2,
         game_date: now,
@@ -143,7 +132,7 @@ export class RoomService {
     const user3 = {
       TableName: process.env.USER_TABLE_NAME,
       Item: {
-        user_id: finishGameDto.user_3rd,
+        user_uuid: finishGameDto.user_3rd,
         game_id: client.data.gameId,
         point: 1,
         game_date: now,
@@ -165,10 +154,10 @@ export class RoomService {
       const data3 = ddbClient.send(new PutCommand(user3));
       console.log('user data add success ', data3);
     } catch (e) {
-      client.emit(
-        'error',
-        'insert item error. try again and check the logs: ' + e,
-      );
+      client.emit('error', {
+        type: 'finishGame',
+        msg: 'insert item error. try again and check the logs: ' + e,
+      });
       console.log('db error' + e);
       return;
     }
