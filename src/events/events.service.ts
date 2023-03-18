@@ -6,12 +6,18 @@ import { v4 as uuidv4 } from 'uuid';
 
 import { ddbClient } from '../config/ddb/ddbClient';
 import { PutCommand } from '@aws-sdk/lib-dynamodb';
+import { InjectRepository } from '@nestjs/typeorm';
+import { UserGame } from '../entity/UserGame';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class RoomService {
-  private roomList: Record<string, roomListDto>;
+  private readonly roomList: Record<string, roomListDto>;
 
-  constructor() {
+  constructor(
+    @InjectRepository(UserGame)
+    private userGameRepository: Repository<UserGame>,
+  ) {
     this.roomList = {};
   }
 
@@ -108,51 +114,43 @@ export class RoomService {
       },
     };
     const user1 = {
-      TableName: process.env.USER_TABLE_NAME,
-      Item: {
-        user_uuid: finishGameDto.user_1st,
-        game_id: client.data.gameId,
-        point: 3,
-        game_date: now,
-        prize_type: finishGameDto.prize_type,
-        prize_amount: finishGameDto.prize_amount,
-      },
+      user_uuid: finishGameDto.user_1st,
+      game_id: client.data.gameId,
+      game_date: now,
+      place: 1,
+      point: 3,
+      prize_type: finishGameDto.prize_type,
+      prize_amount: finishGameDto.prize_amount,
     };
     const user2 = {
-      TableName: process.env.USER_TABLE_NAME,
-      Item: {
-        user_uuid: finishGameDto.user_2nd,
-        game_id: client.data.gameId,
-        point: 2,
-        game_date: now,
-        prize_type: finishGameDto.prize_type,
-        prize_amount: 0,
-      },
+      user_uuid: finishGameDto.user_2nd,
+      game_id: client.data.gameId,
+      game_date: now,
+      place: 2,
+      point: 2,
+      prize_type: finishGameDto.prize_type,
+      prize_amount: 0,
     };
     const user3 = {
-      TableName: process.env.USER_TABLE_NAME,
-      Item: {
-        user_uuid: finishGameDto.user_3rd,
-        game_id: client.data.gameId,
-        point: 1,
-        game_date: now,
-        prize_type: finishGameDto.prize_type,
-        prize_amount: 0,
-      },
+      user_uuid: finishGameDto.user_3rd,
+      game_id: client.data.gameId,
+      game_date: now,
+      place: 3,
+      point: 1,
+      prize_type: finishGameDto.prize_type,
+      prize_amount: 0,
     };
 
     // for test
     this.deleteGameRoom(client);
 
     try {
-      const data = ddbClient.send(new PutCommand(game));
-      console.log('game data add success ', data);
-      const data1 = ddbClient.send(new PutCommand(user1));
-      console.log('user data add success ', data1);
-      const data2 = ddbClient.send(new PutCommand(user2));
-      console.log('user data add success ', data2);
-      const data3 = ddbClient.send(new PutCommand(user3));
-      console.log('user data add success ', data3);
+      this.userGameRepository.save(user1).then((r) => console.log(r));
+      this.userGameRepository.save(user2).then((r) => console.log(r));
+      this.userGameRepository.save(user3).then((r) => console.log(r));
+      ddbClient
+        .send(new PutCommand(game))
+        .then((data) => console.log('game data add success ', data));
     } catch (e) {
       client.emit('error', {
         type: 'finishGame',

@@ -1,5 +1,6 @@
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import * as dotenv from 'dotenv';
+import { UserGame } from './entity/UserGame';
 
 dotenv.config();
 
@@ -11,6 +12,7 @@ const ormconfig: TypeOrmModuleOptions = {
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
   synchronize: false,
+  entities: [UserGame],
 };
 
 export default ormconfig;
