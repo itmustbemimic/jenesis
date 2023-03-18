@@ -47,13 +47,9 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   handleDisconnect(client: Socket): void {
     const { gameId } = client.data;
 
-    if (
-      gameId != 'room:lobby' &&
-      !this.server.sockets.adapter.rooms.get(gameId)
-    ) {
+    if (!this.server.sockets.adapter.rooms.get(gameId)) {
       this.server.emit('getGameRoomList', this.roomService.getGameRoomList);
     }
-    console.log('disconnected', client.id);
   }
 
   // TODO 타이머

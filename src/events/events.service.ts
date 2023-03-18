@@ -3,7 +3,6 @@ import { finishGameDto, roomListDto } from './dto/events.dto';
 import { createRoomRequestDto } from './dto/events.dto';
 import { Socket } from 'socket.io';
 import { v4 as uuidv4 } from 'uuid';
-
 import { ddbClient } from '../config/ddb/ddbClient';
 import { PutCommand } from '@aws-sdk/lib-dynamodb';
 import { InjectRepository } from '@nestjs/typeorm';
