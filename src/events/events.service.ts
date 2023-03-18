@@ -94,6 +94,17 @@ export class RoomService {
   }
 
   finishGame(client: Socket, finishGameDto: finishGameDto) {
+    if (
+      client.data.gameId === 'room:lobby' ||
+      this.getGameRoom(client.data.gameId).dealer_id !== client.data.nickname
+    ) {
+      client.emit('error', {
+        type: 'finishGame',
+        msg: '게임에 속해 있지 않거나, 해당 게임의 딜러가 아닙니다.',
+      });
+      return;
+    }
+
     const now: string = new Date().toISOString();
 
     const game = {
@@ -144,9 +155,9 @@ export class RoomService {
     this.deleteGameRoom(client);
 
     try {
-      this.userGameRepository.save(user1).then((r) => console.log(r));
-      this.userGameRepository.save(user2).then((r) => console.log(r));
-      this.userGameRepository.save(user3).then((r) => console.log(r));
+      this.userGameRepository.insert(user1).then((r) => console.log(r));
+      this.userGameRepository.insert(user2).then((r) => console.log(r));
+      this.userGameRepository.insert(user3).then((r) => console.log(r));
       ddbClient
         .send(new PutCommand(game))
         .then((data) => console.log('game data add success ', data));
