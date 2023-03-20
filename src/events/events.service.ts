@@ -62,7 +62,7 @@ export class RoomService {
     const { playing_users, dealer_id, entry, entry_limit } =
       this.getGameRoom(gameId);
 
-    if (entry_limit <= entry) {
+    if (entry_limit <= entry && dealer_id !== client.data.nickname) {
       client.emit('error', { type: 'enterGameRoom', msg: '엔트리 꽉참' });
       return;
     }
@@ -94,6 +94,10 @@ export class RoomService {
   }
 
   finishGame(client: Socket, finishGameDto: finishGameDto) {
+    const { playing_users, sitout_users } = this.getGameRoom(
+      client.data.gameId,
+    );
+
     if (
       client.data.gameId === 'room:lobby' ||
       this.getGameRoom(client.data.gameId).dealer_id !== client.data.nickname
@@ -106,7 +110,6 @@ export class RoomService {
     }
 
     const now: string = new Date().toISOString();
-
     const game = {
       TableName: process.env.GAME_TABLE_NAME,
       Item: {
@@ -118,8 +121,8 @@ export class RoomService {
         prize_type: finishGameDto.prize_type,
         prize_amount: finishGameDto.prize_amount,
         user_list: {
-          ...this.getGameRoom(client.data.gameId).playing_users,
-          ...this.getGameRoom(client.data.gameId).sitout_users,
+          ...playing_users,
+          ...sitout_users,
         },
       },
     };
@@ -155,12 +158,18 @@ export class RoomService {
     this.deleteGameRoom(client);
 
     try {
-      this.userGameRepository.insert(user1).then((r) => console.log(r));
-      this.userGameRepository.insert(user2).then((r) => console.log(r));
-      this.userGameRepository.insert(user3).then((r) => console.log(r));
+      this.userGameRepository
+        .insert(user1)
+        .then((r) => console.log('1st user data inserted'));
+      this.userGameRepository
+        .insert(user2)
+        .then((r) => console.log('2nd user data inserted'));
+      this.userGameRepository
+        .insert(user3)
+        .then((r) => console.log('3rd user data inserted'));
       ddbClient
         .send(new PutCommand(game))
-        .then((data) => console.log('game data add success ', data));
+        .then((data) => console.log('game data add success '));
     } catch (e) {
       client.emit('error', {
         type: 'finishGame',
@@ -168,6 +177,37 @@ export class RoomService {
       });
       console.log('db error' + e);
       return;
+    }
+
+    const allUsers = { ...playing_users, ...sitout_users };
+
+    for (const v in allUsers) {
+      if (
+        allUsers[v] === finishGameDto.user_1st ||
+        allUsers[v] === finishGameDto.user_2nd ||
+        allUsers[v] === finishGameDto.user_3rd
+      ) {
+        continue;
+      } else {
+        const user = {
+          user_uuid: allUsers[v],
+          game_id: client.data.gameId,
+          game_date: now,
+          prize_type: finishGameDto.prize_type,
+          prize_amount: 0,
+        };
+        try {
+          this.userGameRepository
+            .insert(user)
+            .then((r) => console.log(allUsers[v] + 'data inserted'));
+        } catch (e) {
+          client.emit('error', {
+            type: 'finishGame',
+            msg: 'insert others data error. try again and check the logs: ' + e,
+          });
+          return;
+        }
+      }
     }
 
     // for publish
