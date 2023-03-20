@@ -55,6 +55,9 @@ export class RoomService {
     client.rooms.clear();
     client.join(gameId);
     client.emit('getMessage', this.roomList);
+
+    // 방 만든 어드민한테 해당 게임 방 아이디 전송
+    client.to(gameId).emit('newRoom', gameId);
   }
 
   enterGameRoom(client: Socket, gameId: string) {
