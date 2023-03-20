@@ -193,6 +193,8 @@ export class RoomService {
           user_uuid: allUsers[v],
           game_id: client.data.gameId,
           game_date: now,
+          place: 0,
+          point: 0,
           prize_type: finishGameDto.prize_type,
           prize_amount: 0,
         };
