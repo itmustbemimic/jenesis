@@ -13,6 +13,7 @@ export class roomListDto {
   playing_users: Record<string, string>;
   sitout_users: Record<string, string>;
   status: string;
+  seat: string[];
 }
 
 export class createRoomRequestDto {
@@ -33,4 +34,9 @@ export class finishGameDto {
   user_3rd: string;
   prize_type: string;
   prize_amount: number;
+}
+
+export class enterGameDto {
+  gameId: string;
+  chair: number;
 }

@@ -7,7 +7,11 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { RoomService } from './events.service';
-import { createRoomRequestDto, finishGameDto } from './dto/events.dto';
+import {
+  createRoomRequestDto,
+  enterGameDto,
+  finishGameDto,
+} from './dto/events.dto';
 import * as jwt from 'jsonwebtoken';
 import * as dotenv from 'dotenv';
 dotenv.config();
@@ -91,23 +95,28 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('enterGameRoom')
-  enterGameRoom(client: Socket, gameId: string) {
-    console.log(client.data.nickname + ' trying to enter ' + gameId);
+  enterGameRoom(client: Socket, enterGameDto: enterGameDto) {
+    console.log(
+      client.data.nickname + ' trying to enter ' + enterGameDto.gameId,
+    );
 
-    if (!this.roomService.getGameRoom(gameId)) {
+    // 입력받은 게임방이 존재하지 않음
+    if (!this.roomService.getGameRoom(enterGameDto.gameId)) {
       client.emit('error', { type: 'enterGameRoom', msg: '방 아이디 확인' });
       return;
     }
 
-    if (client.rooms.has(gameId)) {
+    // 이미 해당 게임방에 속해 있으면 아무것도 안함
+    if (client.rooms.has(enterGameDto.gameId)) {
       return;
     }
 
-    this.roomService.enterGameRoom(client, gameId);
+    // 게임 입장
+    this.roomService.enterGameRoom(client, enterGameDto);
 
     return {
-      gameId: gameId,
-      gameName: this.roomService.getGameRoom(gameId).game_name,
+      gameId: enterGameDto,
+      gameName: this.roomService.getGameRoom(enterGameDto.gameId).game_name,
     };
   }
 

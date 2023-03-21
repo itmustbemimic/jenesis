@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { finishGameDto, roomListDto } from './dto/events.dto';
+import { enterGameDto, finishGameDto, roomListDto } from './dto/events.dto';
 import { createRoomRequestDto } from './dto/events.dto';
 import { Socket } from 'socket.io';
 import { v4 as uuidv4 } from 'uuid';
@@ -49,6 +49,7 @@ export class RoomService {
       playing_users: {},
       sitout_users: {},
       status: request.status,
+      seat: new Array(11),
     };
 
     client.data.gameId = gameId;
@@ -60,7 +61,8 @@ export class RoomService {
     client.to(gameId).emit('newRoom', gameId);
   }
 
-  enterGameRoom(client: Socket, gameId: string) {
+  enterGameRoom(client: Socket, requestDto: enterGameDto) {
+    const { gameId, chair } = requestDto;
     const { nickname, uuid } = client.data;
     const { playing_users, dealer_id, entry, entry_limit } =
       this.getGameRoom(gameId);
@@ -77,6 +79,7 @@ export class RoomService {
     if (!playing_users[nickname] && dealer_id !== client.data.nickname) {
       playing_users[nickname] = uuid;
       this.getGameRoom(gameId).entry++;
+      this.getGameRoom(gameId).seat[chair] = uuid;
       client.to(gameId).emit('getMessage', nickname + ' 게임 참가');
     }
   }
