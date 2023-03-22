@@ -99,16 +99,18 @@ export class RoomService {
   sitoutGame(client: Socket, gameId: string, userNickname: string) {
     const { playing_users, sitout_users, seat } = this.getGameRoom(gameId);
 
+    // 없는 유저를 sitout 할수는 없으니까
     if (!playing_users[userNickname]) {
       client.emit('error', {
         type: 'sitout',
         msg: userNickname + '님은 플레이 중인 유저가 아닙니다.',
       });
     } else {
+      // 플레잉유저 목록에서 싯아웃 유저 목록으로 이동
       sitout_users[userNickname] = playing_users[userNickname];
       delete playing_users[userNickname];
 
-      // TODO sitout하면 자리도 비워줘야지
+      // 앉아있던 자리 비우기
       for (const i in seat) {
         if (seat[i].nickname === userNickname) {
           seat[i] = null;
@@ -125,8 +127,8 @@ export class RoomService {
       client.data.gameId,
     );
 
+    // 해당 게임의 딜러만 게임 종료 가능
     if (
-      client.data.gameId === 'room:lobby' ||
       this.getGameRoom(client.data.gameId).dealer_id !== client.data.nickname
     ) {
       client.emit('error', {
