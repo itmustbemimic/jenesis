@@ -64,11 +64,21 @@ export class RoomService {
   enterGameRoom(client: Socket, requestDto: enterGameDto) {
     const { gameId, chair } = requestDto;
     const { nickname, uuid } = client.data;
-    const { playing_users, dealer_id, entry, entry_limit } =
+    const { playing_users, dealer_id, entry, entry_limit, seat } =
       this.getGameRoom(gameId);
 
+    // 엔트리 꽉차면 입장 불가. 해당게임 딜러는 꽉차도 들어와야지
     if (entry_limit <= entry && dealer_id !== client.data.nickname) {
       client.emit('error', { type: 'enterGameRoom', msg: '엔트리 꽉참' });
+      return;
+    }
+
+    // 앉으려는 자리가 사용중이라면 입장 불가.
+    if (seat[requestDto.chair] != null) {
+      client.emit('error', {
+        type: 'enterGameRoom',
+        msg: '이미 사용중인 자리입니다.',
+      });
       return;
     }
 
@@ -76,16 +86,18 @@ export class RoomService {
     client.rooms.clear();
     client.join(gameId);
 
+    // 이미 플레이중인 유저가 들어오면 엔트리 추가안함. 티켓 소모도 안함
+    // 해당 게임의 딜러는 입장해도 엔트리/게임자리 차지 안함
     if (!playing_users[nickname] && dealer_id !== client.data.nickname) {
       playing_users[nickname] = uuid;
       this.getGameRoom(gameId).entry++;
-      this.getGameRoom(gameId).seat[chair] = uuid;
+      this.getGameRoom(gameId).seat[chair] = { nickname: nickname, uuid: uuid };
       client.to(gameId).emit('getMessage', nickname + ' 게임 참가');
     }
   }
 
   sitoutGame(client: Socket, gameId: string, userNickname: string) {
-    const { playing_users, sitout_users } = this.getGameRoom(gameId);
+    const { playing_users, sitout_users, seat } = this.getGameRoom(gameId);
 
     if (!playing_users[userNickname]) {
       client.emit('error', {
@@ -95,6 +107,15 @@ export class RoomService {
     } else {
       sitout_users[userNickname] = playing_users[userNickname];
       delete playing_users[userNickname];
+
+      // TODO sitout하면 자리도 비워줘야지
+      for (const i in seat) {
+        if (seat[i].nickname === userNickname) {
+          seat[i] = null;
+          break;
+        }
+      }
+
       client.to(gameId).emit('getMessage', userNickname + 'sitout');
     }
   }
@@ -116,6 +137,8 @@ export class RoomService {
     }
 
     const now: string = new Date().toISOString();
+
+    // game data
     const game = {
       TableName: process.env.GAME_TABLE_NAME,
       Item: {
@@ -132,6 +155,8 @@ export class RoomService {
         },
       },
     };
+
+    // winners data
     const user1 = {
       user_uuid: finishGameDto.user_1st,
       game_id: client.data.gameId,
@@ -185,8 +210,8 @@ export class RoomService {
       return;
     }
 
+    // 나머지 유저들 데이터
     const allUsers = { ...playing_users, ...sitout_users };
-
     for (const v in allUsers) {
       if (
         allUsers[v] === finishGameDto.user_1st ||

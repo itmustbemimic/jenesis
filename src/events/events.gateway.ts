@@ -23,6 +23,7 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   server: Server;
 
   handleConnection(client: Socket): void {
+    // jwt decode
     try {
       const decodedJwt = jwt.verify(
         client.handshake.headers.authorization.substring('Bearer '.length),
@@ -37,6 +38,7 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
       return;
     }
 
+    // jwt에 권한 없으면 연결 안받아줌
     if (!client.data.roles.includes('ROLE_PERMITTED')) {
       client.emit('error', '가입 승인 되지 않은 유저');
       client.disconnect();
@@ -44,8 +46,6 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     client.leave(client.id);
-    client.data.gameId = `room:lobby`;
-    client.join('room:lobby');
   }
 
   handleDisconnect(client: Socket): void {
