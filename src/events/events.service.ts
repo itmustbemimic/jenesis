@@ -93,6 +93,7 @@ export class RoomService {
       this.getGameRoom(gameId).entry++;
       this.getGameRoom(gameId).seat[chair] = { nickname: nickname, uuid: uuid };
       client.to(gameId).emit('getMessage', nickname + ' 게임 참가');
+      client.emit('getGameRoomList', this.roomList);
     }
   }
 
@@ -119,6 +120,7 @@ export class RoomService {
       }
 
       client.to(gameId).emit('getMessage', userNickname + 'sitout');
+      client.emit('getGameRoomList', this.roomList);
     }
   }
 
@@ -150,7 +152,7 @@ export class RoomService {
         user_2nd: finishGameDto.user_2nd,
         user_3rd: finishGameDto.user_3rd,
         prize_type: finishGameDto.prize_type,
-        prize_amount: finishGameDto.prize_amount,
+        // prize_amount: finishGameDto.prize_amount,
         user_list: {
           ...playing_users,
           ...sitout_users,
@@ -166,25 +168,25 @@ export class RoomService {
       place: 1,
       point: 3,
       prize_type: finishGameDto.prize_type,
-      prize_amount: finishGameDto.prize_amount,
+      prize_amount: 4,
     };
     const user2 = {
       user_uuid: finishGameDto.user_2nd,
       game_id: client.data.gameId,
       game_date: now,
       place: 2,
-      point: 2,
+      point: 0,
       prize_type: finishGameDto.prize_type,
-      prize_amount: 0,
+      prize_amount: 2,
     };
     const user3 = {
       user_uuid: finishGameDto.user_3rd,
       game_id: client.data.gameId,
       game_date: now,
       place: 3,
-      point: 1,
+      point: 0,
       prize_type: finishGameDto.prize_type,
-      prize_amount: 0,
+      prize_amount: 1,
     };
 
     // for test

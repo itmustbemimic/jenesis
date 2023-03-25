@@ -132,6 +132,8 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     return this.roomService.sitoutGame(client, gameId, userNickname);
   }
 
+  // TODO 마감된 게임 만들기
+
   @SubscribeMessage('finishGame')
   finishGame(client: Socket, finishGameDto: finishGameDto) {
     if (!client.data.roles.includes('ROLE_ADMIN')) {

@@ -33,7 +33,6 @@ export class finishGameDto {
   user_2nd: string;
   user_3rd: string;
   prize_type: string;
-  prize_amount: number;
 }
 
 export class enterGameDto {
