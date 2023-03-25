@@ -115,13 +115,12 @@ export class RoomService {
       sitout_users[userNickname] = playing_users[userNickname];
       delete playing_users[userNickname];
 
-      // 앉아있던 자리 비우기
-      for (const i in seat) {
-        if (seat[i].nickname === userNickname) {
+      seat.forEach((v, i) => {
+        if (v?.nickname === userNickname) {
           seat[i] = null;
-          break;
+          return;
         }
-      }
+      });
 
       client.to(gameId).emit('getMessage', userNickname + 'sitout');
       client.emit('getGameRoomList', this.roomList);
