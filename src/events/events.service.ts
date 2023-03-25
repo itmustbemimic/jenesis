@@ -68,13 +68,17 @@ export class RoomService {
       this.getGameRoom(gameId);
 
     // 엔트리 꽉차면 입장 불가. 해당게임 딜러는 꽉차도 들어와야지
-    if (entry_limit <= entry && dealer_id !== client.data.nickname) {
+    if (entry_limit <= entry && dealer_id !== nickname) {
       client.emit('error', { type: 'enterGameRoom', msg: '엔트리 꽉참' });
       return;
     }
 
     // 앉으려는 자리가 사용중이라면 입장 불가.
-    if (seat[requestDto.chair] != null) {
+    // 내가 앉아있던 자리면 사용 가능.
+    if (
+      seat[requestDto.chair] != null &&
+      seat[requestDto.chair].nickname !== nickname
+    ) {
       client.emit('error', {
         type: 'enterGameRoom',
         msg: '이미 사용중인 자리입니다.',
