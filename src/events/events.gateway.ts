@@ -146,6 +146,11 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     return this.roomService.finishGame(client, finishGameDto);
   }
 
+  @SubscribeMessage('startTimer')
+  startTimer(client: Socket) {
+    this.roomService.startTimer(client);
+  }
+
   // TODO 타이머, 승점 가산점
   // TODO 자리 만들기
 }

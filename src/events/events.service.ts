@@ -8,16 +8,19 @@ import { PutCommand } from '@aws-sdk/lib-dynamodb';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserGame } from '../entity/UserGame';
 import { Repository } from 'typeorm';
+import { type } from 'os';
 
 @Injectable()
 export class RoomService {
   private readonly roomList: Record<string, roomListDto>;
+  private readonly timer: Record<string, NodeJS.Timer>;
 
   constructor(
     @InjectRepository(UserGame)
     private userGameRepository: Repository<UserGame>,
   ) {
     this.roomList = {};
+    this.timer = {};
   }
 
   createGameRoom(client: Socket, request: createRoomRequestDto): void {
@@ -253,6 +256,31 @@ export class RoomService {
     // for publish
     // this.deleteGameRoom(client);
     client.emit('getMessage', '게임 기록 성공!');
+  }
+
+  startTimer(client: Socket) {
+    const { gameId } = client.data;
+    const { duration } = this.getGameRoom(gameId);
+
+    if (this.timer[gameId]) {
+      client.emit('error', '타이머가 이미 동작중 입니다.');
+      return;
+    }
+    let time = duration * 60;
+    let min = 0;
+    let sec = 0;
+
+    this.timer[gameId] = setInterval(() => {
+      min = Math.floor(time / 60);
+      sec = time % 60;
+
+      client.to(gameId).emit('timer', min + ':' + sec);
+      time--;
+
+      if (time < 0) {
+        clearInterval(this.timer[gameId]);
+      }
+    }, 1000);
   }
 
   getGameRoom(gameId: string): roomListDto {
