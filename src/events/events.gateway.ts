@@ -148,7 +148,35 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage('startTimer')
   startTimer(client: Socket) {
+    if (!client.data.roles.includes('ROLE_ADMIN')) {
+      client.emit('error', {
+        type: 'startTimer',
+        msg: '관리자만 타이머 시작 가능',
+      });
+    }
     this.roomService.startTimer(client);
+  }
+
+  @SubscribeMessage('resetTimer')
+  resetTimer(client: Socket) {
+    if (!client.data.roles.includes('ROLE_ADMIN')) {
+      client.emit('error', {
+        type: 'startTimer',
+        msg: '관리자만 타이머 리셋 가능',
+      });
+    }
+    this.roomService.resetTimer(client);
+  }
+
+  @SubscribeMessage('stopTimer')
+  stopTimer(client: Socket) {
+    if (!client.data.roles.includes('ROLE_ADMIN')) {
+      client.emit('error', {
+        type: 'startTimer',
+        msg: '관리자만 타이머 정지 가능',
+      });
+    }
+    this.roomService.stopTimer(client);
   }
 
   // TODO 타이머, 승점 가산점

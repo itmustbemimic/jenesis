@@ -44,3 +44,8 @@ export class seat {
   nickname: string;
   uuid: string;
 }
+
+export class Timer {
+  timer: NodeJS.Timer;
+  time: number;
+}

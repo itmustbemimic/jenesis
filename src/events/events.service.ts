@@ -1,5 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { enterGameDto, finishGameDto, roomListDto } from './dto/events.dto';
+import {
+  enterGameDto,
+  finishGameDto,
+  roomListDto,
+  Timer,
+} from './dto/events.dto';
 import { createRoomRequestDto } from './dto/events.dto';
 import { Socket } from 'socket.io';
 import { v4 as uuidv4 } from 'uuid';
@@ -13,7 +18,7 @@ import { type } from 'os';
 @Injectable()
 export class RoomService {
   private readonly roomList: Record<string, roomListDto>;
-  private readonly timer: Record<string, NodeJS.Timer>;
+  private readonly timer: Record<string, Timer>;
 
   constructor(
     @InjectRepository(UserGame)
@@ -262,25 +267,47 @@ export class RoomService {
     const { gameId } = client.data;
     const { duration } = this.getGameRoom(gameId);
 
-    if (this.timer[gameId]) {
-      client.emit('error', '타이머가 이미 동작중 입니다.');
+    if (!this.timer[gameId]) {
+      this.timer[gameId] = {
+        timer: null,
+        time: null,
+      };
+    }
+
+    if (this.timer[gameId]?.timer) {
+      client.emit('error', {
+        type: 'startTimer',
+        msg: '타이머가 이미 동작중 입니다.',
+      });
       return;
     }
-    let time = duration * 60;
+
+    let time = this.timer[gameId].time ?? duration * 60 - 1;
     let min = 0;
     let sec = 0;
 
-    this.timer[gameId] = setInterval(() => {
+    this.timer[gameId].timer = setInterval(() => {
       min = Math.floor(time / 60);
       sec = time % 60;
 
       client.to(gameId).emit('timer', min + ':' + sec);
+      this.timer[gameId].time = time;
       time--;
 
-      if (time < 0) {
-        clearInterval(this.timer[gameId]);
+      if (time <= 0) {
+        clearInterval(this.timer[gameId].timer);
       }
     }, 1000);
+  }
+
+  resetTimer(client: Socket) {
+    clearInterval(this.timer[client.data.gameId].timer);
+    delete this.timer[client.data.gameId];
+  }
+
+  stopTimer(client: Socket) {
+    clearInterval(this.timer[client.data.gameId].timer);
+    this.timer[client.data.gameId].timer = null;
   }
 
   getGameRoom(gameId: string): roomListDto {
