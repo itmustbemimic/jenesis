@@ -265,7 +265,22 @@ export class RoomService {
 
   startTimer(client: Socket) {
     const { gameId } = client.data;
-    const { duration } = this.getGameRoom(gameId);
+    if (!gameId) {
+      client.emit('error', {
+        type: 'startTimer',
+        msg: '만들어진 방이 없습니다.',
+      });
+    }
+
+    const { duration, dealer_id } = this.getGameRoom(gameId);
+
+    if (dealer_id != client.data.nickname) {
+      client.emit('error', {
+        type: 'startTimer',
+        msg: '해당 게임의 딜러만 타이머 조작 가능.',
+      });
+      return;
+    }
 
     if (!this.timer[gameId]) {
       this.timer[gameId] = {
@@ -301,13 +316,31 @@ export class RoomService {
   }
 
   resetTimer(client: Socket) {
-    clearInterval(this.timer[client.data.gameId].timer);
-    delete this.timer[client.data.gameId];
+    if (
+      this.getGameRoom(client.data.gameId).dealer_id == client.data.nickname
+    ) {
+      clearInterval(this.timer[client.data.gameId].timer);
+      delete this.timer[client.data.gameId];
+    } else {
+      client.emit('error', {
+        type: 'startTimer',
+        msg: '해당 게임의 딜러만 타이머 조작 가능.',
+      });
+    }
   }
 
   stopTimer(client: Socket) {
-    clearInterval(this.timer[client.data.gameId].timer);
-    this.timer[client.data.gameId].timer = null;
+    if (
+      this.getGameRoom(client.data.gameId).dealer_id == client.data.nickname
+    ) {
+      clearInterval(this.timer[client.data.gameId].timer);
+      this.timer[client.data.gameId].timer = null;
+    } else {
+      client.emit('error', {
+        type: 'startTimer',
+        msg: '해당 게임의 딜러만 타이머 조작 가능.',
+      });
+    }
   }
 
   getGameRoom(gameId: string): roomListDto {
