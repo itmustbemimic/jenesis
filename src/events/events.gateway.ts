@@ -56,7 +56,6 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
-  // TODO 타이머
   @SubscribeMessage('sendMessage')
   sendMessage(client: Socket, message: string): void {
     const { gameId } = client.data;
@@ -168,7 +167,7 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.roomService.resetTimer(client);
   }
 
-  @SubscribeMessage('stopTimer')
+  @SubscribeMessage('pauseTimer')
   stopTimer(client: Socket) {
     if (!client.data.roles.includes('ROLE_ADMIN')) {
       client.emit('error', {
@@ -176,9 +175,8 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
         msg: '관리자만 타이머 정지 가능',
       });
     }
-    this.roomService.stopTimer(client);
+    this.roomService.pauseTimer(client);
   }
 
-  // TODO 타이머, 승점 가산점
-  // TODO 자리 만들기
+  // TODO 승점 가산점
 }

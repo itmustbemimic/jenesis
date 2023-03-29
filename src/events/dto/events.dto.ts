@@ -48,4 +48,5 @@ export class seat {
 export class Timer {
   timer: NodeJS.Timer;
   time: number;
+  level: number;
 }

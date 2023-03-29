@@ -14,6 +14,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { UserGame } from '../entity/UserGame';
 import { Repository } from 'typeorm';
 import { type } from 'os';
+import { blindStructure } from '../constants/blind';
 
 @Injectable()
 export class RoomService {
@@ -286,6 +287,7 @@ export class RoomService {
       this.timer[gameId] = {
         timer: null,
         time: null,
+        level: 0,
       };
     }
 
@@ -301,6 +303,9 @@ export class RoomService {
     let min = 0;
     let sec = 0;
 
+    this.roomList[gameId].blind = blindStructure[this.timer[gameId].level];
+    client.to(gameId).emit('blind', this.roomList[gameId].blind);
+
     this.timer[gameId].timer = setInterval(() => {
       min = Math.floor(time / 60);
       sec = time % 60;
@@ -311,6 +316,9 @@ export class RoomService {
 
       if (time <= 0) {
         clearInterval(this.timer[gameId].timer);
+        delete this.timer[gameId].timer;
+        delete this.timer[gameId].time;
+        this.timer[gameId].level++;
       }
     }, 1000);
   }
@@ -329,7 +337,7 @@ export class RoomService {
     }
   }
 
-  stopTimer(client: Socket) {
+  pauseTimer(client: Socket) {
     if (
       this.getGameRoom(client.data.gameId).dealer_id == client.data.nickname
     ) {
