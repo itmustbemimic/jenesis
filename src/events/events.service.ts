@@ -13,7 +13,6 @@ import { PutCommand } from '@aws-sdk/lib-dynamodb';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserGame } from '../entity/UserGame';
 import { Repository } from 'typeorm';
-import { type } from 'os';
 import { blindStructure } from '../constants/blind';
 
 @Injectable()
@@ -71,6 +70,15 @@ export class RoomService {
   }
 
   enterGameRoom(client: Socket, requestDto: enterGameDto) {
+    const { gameId } = requestDto;
+
+    // enterGame은 방에 입장만. 실제 게임 참여는 seat
+    client.data.gameId = gameId;
+    client.rooms.clear();
+    client.join(gameId);
+  }
+
+  seat(client: Socket, requestDto: enterGameDto) {
     const { gameId, chair } = requestDto;
     const { nickname, uuid } = client.data;
     const { playing_users, dealer_id, entry, entry_limit, seat } =

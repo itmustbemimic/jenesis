@@ -119,6 +119,28 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     };
   }
 
+  @SubscribeMessage('seat')
+  seat(client: Socket, enterGameDto: enterGameDto) {
+    // 입력받은 게임방이 존재하지 않음
+    if (!this.roomService.getGameRoom(enterGameDto.gameId)) {
+      client.emit('error', { type: 'enterGameRoom', msg: '방 아이디 확인' });
+      return;
+    }
+
+    // 이미 해당 게임방에 속해 있으면 아무것도 안함
+    if (client.rooms.has(enterGameDto.gameId)) {
+      return;
+    }
+
+    // 게임 입장
+    this.roomService.seat(client, enterGameDto);
+
+    return {
+      gameId: enterGameDto,
+      gameName: this.roomService.getGameRoom(enterGameDto.gameId).game_name,
+    };
+  }
+
   @SubscribeMessage('sitout')
   sitoutGame(client: Socket, userNickname: string) {
     if (!client.data.roles.includes('ROLE_ADMIN')) {
@@ -163,6 +185,7 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
         type: 'startTimer',
         msg: '관리자만 타이머 리셋 가능',
       });
+      return;
     }
     this.roomService.resetTimer(client);
   }
@@ -174,6 +197,7 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
         type: 'startTimer',
         msg: '관리자만 타이머 정지 가능',
       });
+      return;
     }
     this.roomService.pauseTimer(client);
   }
