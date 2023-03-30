@@ -190,6 +190,18 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.roomService.resetTimer(client);
   }
 
+  @SubscribeMessage('closeGame')
+  closeGame(client: Socket) {
+    if (!client.data.roles.includes('ROLE_ADMIN')) {
+      client.emit('error', {
+        type: 'finishGame',
+        msg: '관리자만 게임 마감 가능',
+      });
+      return;
+    }
+    this.roomService.closeGame(client);
+  }
+
   @SubscribeMessage('pauseTimer')
   stopTimer(client: Socket) {
     if (!client.data.roles.includes('ROLE_ADMIN')) {

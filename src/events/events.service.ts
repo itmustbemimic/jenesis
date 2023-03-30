@@ -279,6 +279,7 @@ export class RoomService {
         type: 'startTimer',
         msg: '만들어진 방이 없습니다.',
       });
+      return;
     }
 
     const { duration, dealer_id } = this.getGameRoom(gameId);
@@ -355,6 +356,18 @@ export class RoomService {
       client.emit('error', {
         type: 'startTimer',
         msg: '해당 게임의 딜러만 타이머 조작 가능.',
+      });
+    }
+  }
+
+  closeGame(client: Socket) {
+    if (this.roomList[client.data.gameId].dealer_id == client.data.nickname) {
+      this.roomList[client.data.gameId].status = 'closed';
+      client.broadcast.emit('getGameRoomList', this.getGameRoomList());
+    } else {
+      client.emit('error', {
+        type: 'closeGame',
+        msg: '딜러만 게임 마감 가능',
       });
     }
   }
