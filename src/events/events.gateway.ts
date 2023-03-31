@@ -127,11 +127,6 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
       return;
     }
 
-    // 이미 해당 게임방에 속해 있으면 아무것도 안함
-    if (client.rooms.has(enterGameDto.gameId)) {
-      return;
-    }
-
     // 게임 입장
     this.roomService.seat(client, enterGameDto);
 

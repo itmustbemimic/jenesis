@@ -14,6 +14,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { UserGame } from '../entity/UserGame';
 import { Repository } from 'typeorm';
 import { blindStructure } from '../constants/blind';
+import axios from 'axios';
 
 @Injectable()
 export class RoomService {
@@ -81,8 +82,16 @@ export class RoomService {
   seat(client: Socket, requestDto: enterGameDto) {
     const { gameId, chair } = requestDto;
     const { nickname, uuid } = client.data;
-    const { playing_users, dealer_id, entry, entry_limit, seat } =
-      this.getGameRoom(gameId);
+    const {
+      playing_users,
+      dealer_id,
+      entry,
+      entry_limit,
+      seat,
+      ticket_type,
+      ticket_amount,
+      game_name,
+    } = this.getGameRoom(gameId);
 
     // 엔트리 꽉차면 입장 불가. 해당게임 딜러는 꽉차도 들어와야지
     if (entry_limit <= entry && dealer_id !== nickname) {
@@ -103,19 +112,42 @@ export class RoomService {
       return;
     }
 
-    client.data.gameId = gameId;
-    client.rooms.clear();
-    client.join(gameId);
-
     // 이미 플레이중인 유저가 들어오면 엔트리 추가안함. 티켓 소모도 안함
     // 해당 게임의 딜러는 입장해도 엔트리/게임자리 차지 안함
     if (!playing_users[nickname] && dealer_id !== client.data.nickname) {
-      playing_users[nickname] = uuid;
-      this.getGameRoom(gameId).entry++;
-      this.getGameRoom(gameId).seat[chair] = { nickname: nickname, uuid: uuid };
-      client.to(gameId).emit('getMessage', nickname + ' 게임 참가');
-      client.emit('getGameRoomList', this.roomList);
+      axios
+        .put(
+          'http://localhost:8080/member/joingame',
+          {
+            type: ticket_type,
+            usage: game_name,
+            amount: ticket_amount,
+          },
+          {
+            headers: {
+              Authorization: client.handshake.headers.authorization,
+            },
+          },
+        )
+        .then((r) => {
+          playing_users[nickname] = uuid;
+          this.getGameRoom(gameId).entry++;
+          this.getGameRoom(gameId).seat[chair] = {
+            nickname: nickname,
+            uuid: uuid,
+          };
+          client.to(gameId).emit('getMessage', nickname + ' 게임 참가');
+          client.emit('getGameRoomList', this.roomList);
+        })
+        .catch((err) =>
+          client.emit('error', { type: 'seat', msg: err.response.data }),
+        );
     }
+
+    // 티켓이 부족하면 enterGame이랑 똑같음
+    client.data.gameId = gameId;
+    client.rooms.clear();
+    client.join(gameId);
   }
 
   sitoutGame(client: Socket, gameId: string, userNickname: string) {
