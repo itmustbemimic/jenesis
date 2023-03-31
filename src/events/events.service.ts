@@ -351,7 +351,9 @@ export class RoomService {
       min = Math.floor(time / 60);
       sec = time % 60;
 
-      client.to(gameId).emit('timer', min + ':' + sec);
+      client
+        .to(gameId)
+        .emit('timer', min + ':' + sec.toString().padStart(2, '0'));
       this.timer[gameId].time = time;
       time--;
 
