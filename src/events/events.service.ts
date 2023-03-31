@@ -117,7 +117,7 @@ export class RoomService {
     if (!playing_users[nickname] && dealer_id !== client.data.nickname) {
       axios
         .put(
-          'http://localhost:8080/member/joingame',
+          'http://43.201.103.250:8080/member/joingame',
           {
             type: ticket_type,
             usage: game_name,
