@@ -34,10 +34,7 @@ export class RoomService {
 
     for (const i in this.roomList) {
       if (this.roomList[i].table_no === request.table_no) {
-        client.emit('error', {
-          type: 'createGameRoom',
-          msg: '테이블이 이미 사용중입니다.',
-        });
+        client.emit('createGameRoomError', '테이블이 이미 사용중입니다.');
         client.emit('getMessage', this.roomList);
         return;
       }
@@ -95,7 +92,7 @@ export class RoomService {
 
     // 엔트리 꽉차면 입장 불가. 해당게임 딜러는 꽉차도 들어와야지
     if (entry_limit <= entry && dealer_id !== nickname) {
-      client.emit('error', { type: 'enterGameRoom', msg: '엔트리 꽉참' });
+      client.emit('seatError', '엔트리 꽉참');
       return;
     }
 
@@ -105,10 +102,7 @@ export class RoomService {
       seat[requestDto.chair] != null &&
       seat[requestDto.chair].nickname !== nickname
     ) {
-      client.emit('error', {
-        type: 'enterGameRoom',
-        msg: '이미 사용중인 자리입니다.',
-      });
+      client.emit('seatError', '이미 사용중인 자리입니다.');
       return;
     }
 
@@ -139,9 +133,7 @@ export class RoomService {
           client.to(gameId).emit('getMessage', nickname + ' 게임 참가');
           client.emit('getGameRoomList', this.roomList);
         })
-        .catch((err) =>
-          client.emit('error', { type: 'seat', msg: err.response.data }),
-        );
+        .catch((err) => client.emit('seatError', err.response.data));
     }
 
     // 티켓이 부족하면 enterGame이랑 똑같음
@@ -155,10 +147,10 @@ export class RoomService {
 
     // 없는 유저를 sitout 할수는 없으니까
     if (!playing_users[userNickname]) {
-      client.emit('error', {
-        type: 'sitout',
-        msg: userNickname + '님은 플레이 중인 유저가 아닙니다.',
-      });
+      client.emit(
+        'sitoutGameError',
+        userNickname + '님은 플레이 중인 유저가 아닙니다.',
+      );
     } else {
       // 플레잉유저 목록에서 싯아웃 유저 목록으로 이동
       sitout_users[userNickname] = playing_users[userNickname];
@@ -185,10 +177,10 @@ export class RoomService {
     if (
       this.getGameRoom(client.data.gameId).dealer_id !== client.data.nickname
     ) {
-      client.emit('error', {
-        type: 'finishGame',
-        msg: '게임에 속해 있지 않거나, 해당 게임의 딜러가 아닙니다.',
-      });
+      client.emit(
+        'finishGameError',
+        '게임에 속해 있지 않거나, 해당 게임의 딜러가 아닙니다.',
+      );
       return;
     }
 
@@ -258,11 +250,11 @@ export class RoomService {
         .send(new PutCommand(game))
         .then((data) => console.log('game data add success '));
     } catch (e) {
-      client.emit('error', {
-        type: 'finishGame',
-        msg: 'insert item error. try again and check the logs: ' + e,
-      });
-      console.log('db error' + e);
+      client.emit(
+        'finishGameError',
+        'insert item error. try again and check the logs: ' + e,
+      );
+      console.error('insert winner error ' + e);
       return;
     }
 
@@ -290,10 +282,11 @@ export class RoomService {
             .insert(user)
             .then((r) => console.log(allUsers[v] + 'data inserted'));
         } catch (e) {
-          client.emit('error', {
-            type: 'finishGame',
-            msg: 'insert others data error. try again and check the logs: ' + e,
-          });
+          client.emit(
+            'finishGameError',
+            'insert others data error. try again and check the logs: ' + e,
+          );
+          console.error('insert rest of user error ' + e);
           return;
         }
       }
@@ -307,20 +300,14 @@ export class RoomService {
   startTimer(client: Socket) {
     const { gameId } = client.data;
     if (!gameId) {
-      client.emit('error', {
-        type: 'startTimer',
-        msg: '만들어진 방이 없습니다.',
-      });
+      client.emit('startTimerError', '만들어진 방이 없습니다.');
       return;
     }
 
     const { duration, dealer_id } = this.getGameRoom(gameId);
 
     if (dealer_id != client.data.nickname) {
-      client.emit('error', {
-        type: 'startTimer',
-        msg: '해당 게임의 딜러만 타이머 조작 가능.',
-      });
+      client.emit('startTimerError', '해당 게임의 딜러만 타이머 조작 가능.');
       return;
     }
 
@@ -333,10 +320,7 @@ export class RoomService {
     }
 
     if (this.timer[gameId]?.timer) {
-      client.emit('error', {
-        type: 'startTimer',
-        msg: '타이머가 이미 동작중 입니다.',
-      });
+      client.emit('startTimerError', '타이머가 이미 동작중 입니다.');
       return;
     }
 
@@ -373,10 +357,7 @@ export class RoomService {
       clearInterval(this.timer[client.data.gameId].timer);
       delete this.timer[client.data.gameId];
     } else {
-      client.emit('error', {
-        type: 'startTimer',
-        msg: '해당 게임의 딜러만 타이머 조작 가능.',
-      });
+      client.emit('resetTimerError', '해당 게임의 딜러만 타이머 조작 가능.');
     }
   }
 
@@ -387,10 +368,7 @@ export class RoomService {
       clearInterval(this.timer[client.data.gameId].timer);
       this.timer[client.data.gameId].timer = null;
     } else {
-      client.emit('error', {
-        type: 'startTimer',
-        msg: '해당 게임의 딜러만 타이머 조작 가능.',
-      });
+      client.emit('pauseTimerError', '해당 게임의 딜러만 타이머 조작 가능.');
     }
   }
 
@@ -399,10 +377,7 @@ export class RoomService {
       this.roomList[client.data.gameId].status = 'closed';
       client.broadcast.emit('getGameRoomList', this.getGameRoomList());
     } else {
-      client.emit('error', {
-        type: 'closeGame',
-        msg: '딜러만 게임 마감 가능',
-      });
+      client.emit('closeGameError', '딜러만 게임 마감 가능');
     }
   }
 
