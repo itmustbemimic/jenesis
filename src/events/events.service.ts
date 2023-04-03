@@ -223,9 +223,9 @@ export class RoomService {
       Item: {
         game_id: client.data.gameId,
         game_date: now,
-        user_1st: finishGameDto.user_1st,
-        user_2nd: finishGameDto.user_2nd,
-        user_3rd: finishGameDto.user_3rd,
+        user_1st: finishGameDto.user_1st ?? null,
+        user_2nd: finishGameDto.user_2nd ?? null,
+        user_3rd: finishGameDto.user_3rd ?? null,
         prize_type: finishGameDto.prize_type,
         // prize_amount: finishGameDto.prize_amount,
         user_list: {
@@ -236,54 +236,56 @@ export class RoomService {
     };
 
     // winners data
-    const user1 = {
-      user_uuid: finishGameDto.user_1st,
-      game_id: client.data.gameId,
-      game_date: now,
-      place: 1,
-      point: 3,
-      prize_type: finishGameDto.prize_type,
-      prize_amount: 4,
-    };
-    const user2 = {
-      user_uuid: finishGameDto.user_2nd,
-      game_id: client.data.gameId,
-      game_date: now,
-      place: 2,
-      point: 0,
-      prize_type: finishGameDto.prize_type,
-      prize_amount: 2,
-    };
-    const user3 = {
-      user_uuid: finishGameDto.user_3rd,
-      game_id: client.data.gameId,
-      game_date: now,
-      place: 3,
-      point: 0,
-      prize_type: finishGameDto.prize_type,
-      prize_amount: 1,
-    };
+    if (finishGameDto.user_1st) {
+      const user1 = {
+        user_uuid: finishGameDto.user_1st,
+        game_id: client.data.gameId,
+        game_date: now,
+        place: 1,
+        point: 3,
+        prize_type: finishGameDto.prize_type,
+        prize_amount: 4,
+      };
+      this.insertMySql(user1);
+    }
+
+    if (finishGameDto.user_2nd) {
+      const user2 = {
+        user_uuid: finishGameDto.user_2nd,
+        game_id: client.data.gameId,
+        game_date: now,
+        place: 2,
+        point: 0,
+        prize_type: finishGameDto.prize_type,
+        prize_amount: 2,
+      };
+      this.insertMySql(user2);
+    }
+
+    if (finishGameDto.user_3rd) {
+      const user3 = {
+        user_uuid: finishGameDto.user_3rd,
+        game_id: client.data.gameId,
+        game_date: now,
+        place: 3,
+        point: 0,
+        prize_type: finishGameDto.prize_type,
+        prize_amount: 1,
+      };
+      this.insertMySql(user3);
+    }
 
     // for test
     this.deleteGameRoom(client);
 
     try {
-      this.userGameRepository
-        .insert(user1)
-        .then((r) => console.log('1st user data inserted'));
-      this.userGameRepository
-        .insert(user2)
-        .then((r) => console.log('2nd user data inserted'));
-      this.userGameRepository
-        .insert(user3)
-        .then((r) => console.log('3rd user data inserted'));
       ddbClient
         .send(new PutCommand(game))
         .then((data) => console.log('game data add success '));
     } catch (e) {
       client.emit(
         'finishGameError',
-        'insert item error. try again and check the logs: ' + e,
+        'insert game data error. try again and check the logs: ' + e,
       );
       console.error('insert winner error ' + e);
       return;
@@ -423,5 +425,15 @@ export class RoomService {
   deleteGameRoom(client: Socket) {
     delete this.roomList[client.data.gameId];
     client.emit('getRoomList', this.roomList);
+  }
+
+  insertMySql(item) {
+    try {
+      this.userGameRepository
+        .insert(item)
+        .then((r) => console.log(item.place + ' user data inserted'));
+    } catch (e) {
+      console.error(item.place + ' player game data insert error: ' + e);
+    }
   }
 }
