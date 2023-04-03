@@ -38,6 +38,7 @@ export class finishGameDto {
 export class enterGameDto {
   gameId: string;
   chair: number;
+  isGuest: boolean;
 }
 
 export class seat {

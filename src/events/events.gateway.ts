@@ -14,6 +14,7 @@ import {
 } from './dto/events.dto';
 import * as jwt from 'jsonwebtoken';
 import * as dotenv from 'dotenv';
+import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
 dotenv.config();
 
 @WebSocketGateway(5000)

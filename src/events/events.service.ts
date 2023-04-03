@@ -15,6 +15,7 @@ import { UserGame } from '../entity/UserGame';
 import { Repository } from 'typeorm';
 import { blindStructure } from '../constants/blind';
 import axios from 'axios';
+import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
 
 @Injectable()
 export class RoomService {
@@ -77,7 +78,7 @@ export class RoomService {
   }
 
   seat(client: Socket, requestDto: enterGameDto) {
-    const { gameId, chair } = requestDto;
+    const { gameId, chair, isGuest } = requestDto;
     const { nickname, uuid } = client.data;
     const {
       playing_users,
@@ -96,25 +97,20 @@ export class RoomService {
       return;
     }
 
-    // 앉으려는 자리가 사용중이라면 입장 불가.
-    // 내가 앉아있던 자리면 사용 가능.
-    if (
-      seat[requestDto.chair] != null &&
-      seat[requestDto.chair].nickname !== nickname
-    ) {
+    if (seat[requestDto.chair] != null) {
       client.emit('seatError', '이미 사용중인 자리입니다.');
       return;
     }
 
-    // 이미 플레이중인 유저가 들어오면 엔트리 추가안함. 티켓 소모도 안함
-    // 해당 게임의 딜러는 입장해도 엔트리/게임자리 차지 안함
-    if (!playing_users[nickname] && dealer_id !== client.data.nickname) {
+    if (isGuest) {
+      //게스트
+      const guestId: string = randomStringGenerator().substring(0, 4);
       axios
         .put(
           'http://43.201.103.250:8080/member/joingame',
           {
             type: ticket_type,
-            usage: game_name,
+            usage: game_name + ' for guest' + guestId,
             amount: ticket_amount,
           },
           {
@@ -124,22 +120,57 @@ export class RoomService {
           },
         )
         .then((r) => {
-          playing_users[nickname] = uuid;
           this.getGameRoom(gameId).entry++;
           this.getGameRoom(gameId).seat[chair] = {
-            nickname: nickname,
-            uuid: uuid,
+            nickname: 'guest' + guestId,
+            uuid: 'guest' + guestId,
           };
-          client.to(gameId).emit('getMessage', nickname + ' 게임 참가');
+          client
+            .to(gameId)
+            .emit('getMessage', 'guest' + guestId + ' 게임 참가');
           client.emit('getGameRoomList', this.roomList);
         })
         .catch((err) => client.emit('seatError', err.response.data));
-    }
+    } else {
+      // 게스트 아님
+      // 앉으려는 자리가 사용중이라면 입장 불가.
+      // 내가 앉아있던 자리면 사용 가능.
 
-    // 티켓이 부족하면 enterGame이랑 똑같음
-    client.data.gameId = gameId;
-    client.rooms.clear();
-    client.join(gameId);
+      // 이미 플레이중인 유저가 들어오면 엔트리 추가안함. 티켓 소모도 안함
+      // 해당 게임의 딜러는 입장해도 엔트리/게임자리 차지 안함
+      if (!playing_users[nickname] && dealer_id !== client.data.nickname) {
+        axios
+          .put(
+            'http://43.201.103.250:8080/member/joingame',
+            {
+              type: ticket_type,
+              usage: game_name,
+              amount: ticket_amount,
+            },
+            {
+              headers: {
+                Authorization: client.handshake.headers.authorization,
+              },
+            },
+          )
+          .then((r) => {
+            playing_users[nickname] = uuid;
+            this.getGameRoom(gameId).entry++;
+            this.getGameRoom(gameId).seat[chair] = {
+              nickname: nickname,
+              uuid: uuid,
+            };
+            client.to(gameId).emit('getMessage', nickname + ' 게임 참가');
+            client.emit('getGameRoomList', this.roomList);
+          })
+          .catch((err) => client.emit('seatError', err.response.data));
+      }
+
+      // 티켓이 부족하면 enterGame이랑 똑같음
+      client.data.gameId = gameId;
+      client.rooms.clear();
+      client.join(gameId);
+    }
   }
 
   sitoutGame(client: Socket, gameId: string, userNickname: string) {
