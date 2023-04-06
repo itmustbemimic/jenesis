@@ -374,11 +374,14 @@ export class RoomService {
       this.timer[gameId].time = time;
       time--;
 
-      if (time <= 0) {
-        clearInterval(this.timer[gameId].timer);
-        delete this.timer[gameId].timer;
-        delete this.timer[gameId].time;
-        this.timer[gameId].level++;
+      if (time < 0) {
+        time = duration * 60 - 1;
+        if (this.timer[gameId].level < 16) {
+          this.timer[gameId].level++;
+          this.roomList[gameId].blind =
+            blindStructure[this.timer[gameId].level];
+          client.to(gameId).emit('blind', this.roomList[gameId].blind);
+        } else this.resetTimer(client);
       }
     }, 1000);
   }
