@@ -122,12 +122,10 @@ export class RoomService {
         .then((r) => {
           this.getGameRoom(gameId).entry++;
           this.getGameRoom(gameId).seat[chair] = {
-            nickname: 'guest' + guestId,
-            uuid: 'guest' + guestId,
+            nickname: 'Guest',
+            uuid: 'Guest',
           };
-          client
-            .to(gameId)
-            .emit('getMessage', 'guest' + guestId + ' 게임 참가');
+          client.to(gameId).emit('getMessage', 'Guest 게임 참가');
           client.emit('getGameRoomList', this.roomList);
         })
         .catch((err) => client.emit('seatError', err.response.data));
