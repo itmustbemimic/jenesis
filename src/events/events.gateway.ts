@@ -138,7 +138,7 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('sitout')
-  sitoutGame(client: Socket, userNickname: string) {
+  sitoutGame(client: Socket, chair: number) {
     if (!client.data.roles.includes('ROLE_ADMIN')) {
       client.emit('error', { type: 'sitout', msg: '관리자만 싯아웃 가능' });
       return;
@@ -146,7 +146,7 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     const { gameId } = client.data;
 
-    return this.roomService.sitoutGame(client, gameId, userNickname);
+    return this.roomService.sitoutGame(client, gameId, chair);
   }
 
   @SubscribeMessage('finishGame')

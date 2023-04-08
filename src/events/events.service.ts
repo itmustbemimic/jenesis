@@ -176,30 +176,21 @@ export class RoomService {
     }
   }
 
-  sitoutGame(client: Socket, gameId: string, userNickname: string) {
+  sitoutGame(client: Socket, gameId: string, chair: number) {
     const { playing_users, sitout_users, seat } = this.getGameRoom(gameId);
+    const userNickname = seat[chair].nickname;
 
-    // 없는 유저를 sitout 할수는 없으니까
-    if (!playing_users[userNickname]) {
-      client.emit(
-        'sitoutGameError',
-        userNickname + '님은 플레이 중인 유저가 아닙니다.',
-      );
-    } else {
-      // 플레잉유저 목록에서 싯아웃 유저 목록으로 이동
+    // 게스트 아니면서 플레이 중인 유저.
+    // 게스트는 플레이 기록이 필요 없음 => 게스트가 아닌 유저만 싯아웃/플레잉 유저 칸에 기록
+    if (playing_users[userNickname]) {
       sitout_users[userNickname] = playing_users[userNickname];
       delete playing_users[userNickname];
-
-      seat.forEach((v, i) => {
-        if (v?.nickname === userNickname) {
-          seat[i] = null;
-          return;
-        }
-      });
-
-      client.to(gameId).emit('getMessage', userNickname + 'sitout');
-      client.emit('getGameRoomList', this.roomList);
     }
+
+    seat[chair] = null;
+
+    client.to(gameId).emit('getMessage', userNickname + 'sitout');
+    client.emit('getGameRoomList', this.getGameRoomList());
   }
 
   finishGame(client: Socket, finishGameDto: finishGameDto) {
