@@ -70,6 +70,11 @@ export class RoomService {
 
   enterGameRoom(client: Socket, requestDto: enterGameDto) {
     const { gameId } = requestDto;
+    const { time } = this.timer[gameId];
+    const min = Math.floor(time / 60);
+    const sec = time % 60;
+
+    client.emit('timer', min + ':' + sec.toString().padStart(2, '0'));
 
     // enterGame은 방에 입장만. 실제 게임 참여는 seat
     client.data.gameId = gameId;
@@ -325,7 +330,8 @@ export class RoomService {
 
     // for publish
     // this.deleteGameRoom(client);
-    client.emit('getMessage', '게임 기록 성공!');
+    client.to(client.data.gameId).emit('recordSuccess', '게임 기록 성공!');
+    client.broadcast.emit('getGameRoomList', this.getGameRoomList());
   }
 
   startTimer(client: Socket) {
