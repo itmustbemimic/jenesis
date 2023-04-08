@@ -384,13 +384,20 @@ export class RoomService {
       this.timer[gameId].time = time;
       time--;
 
+      // 타이머가 끝나면
       if (time < 0) {
+        //타이머 초기화
         time = duration * 60 - 1;
+
+        // 블라인드 레벨이 16미만이라면 초기화된 타이머 마저 돌아감
         if (this.timer[gameId].level < 16) {
           this.timer[gameId].level++;
           this.roomList[gameId].blind =
             blindStructure[this.timer[gameId].level];
           client.to(gameId).emit('blind', this.roomList[gameId].blind);
+          client.broadcast.emit('getGameRoomList', this.getGameRoomList());
+
+          // 블라인드 레벨이 끝났다면 타이머 삭제.
         } else this.resetTimer(client);
       }
     }, 1000);
