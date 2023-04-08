@@ -55,7 +55,7 @@ export class RoomService {
       ante: request.ante,
       playing_users: {},
       sitout_users: {},
-      status: request.status,
+      status: 'waiting',
       seat: new Array(11),
     };
 
@@ -348,6 +348,12 @@ export class RoomService {
       return;
     }
 
+    // 방 정보 플레이 중으로 변경
+    this.roomList[gameId].status = 'playing';
+    client.broadcast.emit('getGameRoomList', this.getGameRoomList());
+
+    // 객체가 있다면 일시정지 or 타이머 동작중. 덮어쓰면안됨
+    // 객체가 없다면 객체 생성
     if (!this.timer[gameId]) {
       this.timer[gameId] = {
         timer: null,
@@ -407,6 +413,8 @@ export class RoomService {
     ) {
       clearInterval(this.timer[client.data.gameId].timer);
       this.timer[client.data.gameId].timer = null;
+      this.roomList[client.data.gameId].status = 'break';
+      client.broadcast.emit('getGameRoomList', this.getGameRoomList());
     } else {
       client.emit('pauseTimerError', '해당 게임의 딜러만 타이머 조작 가능.');
     }
