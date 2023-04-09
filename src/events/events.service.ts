@@ -87,6 +87,7 @@ export class RoomService {
     client.rooms.clear();
     console.log(client.rooms);
     client.join(gameId);
+    console.log(client.rooms);
   }
 
   seat(client: Socket, requestDto: enterGameDto) {
