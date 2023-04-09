@@ -136,7 +136,7 @@ export class RoomService {
             uuid: 'Guest',
           };
           client.to(gameId).emit('getMessage', 'Guest 게임 참가');
-          client.emit('getGameRoomList', this.roomList);
+          client.broadcast.emit('getGameRoomList', this.roomList);
         })
         .catch((err) => client.emit('seatError', err.response.data));
     } else {
@@ -169,7 +169,7 @@ export class RoomService {
               uuid: uuid,
             };
             client.to(gameId).emit('getMessage', nickname + ' 게임 참가');
-            client.emit('getGameRoomList', this.roomList);
+            client.broadcast.emit('getGameRoomList', this.roomList);
           })
           .catch((err) => client.emit('seatError', err.response.data));
       }
@@ -195,7 +195,7 @@ export class RoomService {
     seat[chair] = null;
 
     client.to(gameId).emit('getMessage', userNickname + 'sitout');
-    client.emit('getGameRoomList', this.getGameRoomList());
+    client.broadcast.emit('getGameRoomList', this.getGameRoomList());
   }
 
   finishGame(client: Socket, finishGameDto: finishGameDto) {
