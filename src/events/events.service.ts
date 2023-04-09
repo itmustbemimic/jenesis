@@ -59,6 +59,12 @@ export class RoomService {
       seat: new Array(11),
     };
 
+    this.timer[gameId] = {
+      timer: null,
+      time: null,
+      level: 0,
+    };
+
     client.data.gameId = gameId;
     client.rooms.clear();
     client.join(gameId);
@@ -79,6 +85,7 @@ export class RoomService {
     // enterGame은 방에 입장만. 실제 게임 참여는 seat
     client.data.gameId = gameId;
     client.rooms.clear();
+    console.log(client.rooms);
     client.join(gameId);
   }
 
@@ -109,13 +116,12 @@ export class RoomService {
 
     if (isGuest) {
       //게스트
-      const guestId: string = randomStringGenerator().substring(0, 4);
       axios
         .put(
           'http://43.201.103.250:8080/member/joingame',
           {
             type: ticket_type,
-            usage: game_name + ' for guest' + guestId,
+            usage: game_name + ' for guest',
             amount: ticket_amount,
           },
           {
@@ -236,7 +242,7 @@ export class RoomService {
         game_id: client.data.gameId,
         game_date: now,
         place: 1,
-        point: 3,
+        point: 1,
         prize_type: finishGameDto.prize_type,
         prize_amount: 4,
       };
