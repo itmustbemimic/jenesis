@@ -66,7 +66,7 @@ export class RoomService {
     };
 
     client.data.gameId = gameId;
-    client.rooms.clear();
+    this.leaveAll(client);
     client.join(gameId);
     client.emit('getMessage', this.roomList);
 
@@ -84,10 +84,8 @@ export class RoomService {
 
     // enterGame은 방에 입장만. 실제 게임 참여는 seat
     client.data.gameId = gameId;
-    client.rooms.clear();
-    console.log(client.rooms);
+    this.leaveAll(client);
     client.join(gameId);
-    console.log(client.rooms);
   }
 
   seat(client: Socket, requestDto: enterGameDto) {
@@ -178,7 +176,7 @@ export class RoomService {
 
       // 티켓이 부족하면 enterGame이랑 똑같음
       client.data.gameId = gameId;
-      client.rooms.clear();
+      this.leaveAll(client);
       client.join(gameId);
     }
   }
@@ -428,6 +426,7 @@ export class RoomService {
   closeGame(client: Socket) {
     if (this.roomList[client.data.gameId].dealer_id == client.data.nickname) {
       this.roomList[client.data.gameId].status = 'closed';
+      this.resetTimer(client);
       client.broadcast.emit('getGameRoomList', this.getGameRoomList());
     } else {
       client.emit('closeGameError', '딜러만 게임 마감 가능');
@@ -455,5 +454,11 @@ export class RoomService {
     } catch (e) {
       console.error(item.place + ' player game data insert error: ' + e);
     }
+  }
+
+  leaveAll(client: Socket) {
+    client.rooms.forEach((i) => {
+      client.leave(i);
+    });
   }
 }

@@ -14,7 +14,6 @@ import {
 } from './dto/events.dto';
 import * as jwt from 'jsonwebtoken';
 import * as dotenv from 'dotenv';
-import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
 dotenv.config();
 
 @WebSocketGateway(5000)
@@ -103,11 +102,6 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     // 입력받은 게임방이 존재하지 않음
     if (!this.roomService.getGameRoom(enterGameDto.gameId)) {
       client.emit('error', { type: 'enterGameRoom', msg: '방 아이디 확인' });
-      return;
-    }
-
-    // 이미 해당 게임방에 속해 있으면 아무것도 안함
-    if (client.rooms.has(enterGameDto.gameId)) {
       return;
     }
 
@@ -206,6 +200,11 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
       return;
     }
     this.roomService.pauseTimer(client);
+  }
+
+  @SubscribeMessage('leave')
+  leaveRoom(client: Socket) {
+    this.roomService.leaveAll(client);
   }
 
   // TODO 승점 가산점
