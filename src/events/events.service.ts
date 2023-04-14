@@ -117,7 +117,7 @@ export class RoomService {
       //게스트
       axios
         .put(
-          'http://43.201.103.250:8080/member/joingame',
+          'http://13.125.244.23:8080/member/joingame',
           {
             type: ticket_type,
             usage: game_name + ' for guest',
